@@ -2,17 +2,26 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import {
   ArrowLeft,
+  ArrowDown,
   ArrowRight,
+  ArrowUpRight,
+  BriefcaseBusiness,
   Check,
   CheckCircle2,
   Clock3,
+  Code2,
   Edit3,
   Eye,
+  Heart,
   Layers3,
+  MapPin,
   MessageCircle,
+  PanelTop,
   RefreshCcw,
+  ScanSearch,
   Send,
   Sparkles,
+  Waypoints,
   X
 } from "lucide-react";
 import { gsap } from "gsap";
@@ -290,10 +299,9 @@ function App() {
 function Header({ compact }: { compact: boolean }) {
   return (
     <header className={compact ? "header header--compact" : "header"}>
-      <a className="brand" href="#inicio" aria-label="Cassiano Galvao, pagina inicial">
-        <img src="/assets/brand/logo-cassiano.svg" alt="Cassiano Galvao" />
+      <a className="brand" href="#inicio" aria-label="Cassiano Galvão, página inicial">
+        <img src="/assets/brand/logo-cassiano.svg" alt="Cassiano Galvão" />
       </a>
-      <span>Cassiano Galvao <i>·</i> Web Designer</span>
     </header>
   );
 }
@@ -303,40 +311,106 @@ function Welcome({ recovered, onStart, onResume }: {
   onStart: () => void;
   onResume: () => void;
 }) {
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    gsap.fromTo(".welcome__copy > *", { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.62, stagger: 0.08, ease: "power2.out" });
+    gsap.fromTo(".hero-visual__node", { autoAlpha: 0, scale: 0.76 }, { autoAlpha: 1, scale: 1, duration: 0.55, stagger: 0.12, delay: 0.25, ease: "back.out(1.6)" });
+
+    const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.18 });
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="welcome welcome--visitor" id="inicio" aria-labelledby="welcome-title">
-      <div className="welcome__portrait">
-        <img src="/assets/photo/cassiano-galvao.jpg" alt="Retrato de Cassiano Galvao" />
-        <span className="portrait-tag">WEB DESIGNER · DESDE 2010</span>
-      </div>
-      <div className="welcome__copy">
-        <p className="eyebrow">UMA ANÁLISE SOBRE O MOMENTO DO SEU NEGÓCIO</p>
-        <h1 id="welcome-title">Antes de pensar em um site, vamos entender o que o seu negócio precisa.</h1>
-        <p className="welcome__lead">
-          Todo negócio vive um momento diferente. Talvez você precise organizar melhor seus serviços, fortalecer a confiança, apresentar produtos ou facilitar novos contatos.
-        </p>
-        <p>
-          Responda algumas perguntas rápidas. Ao final, você receberá uma recomendação inicial construída a partir das suas respostas.
-        </p>
-        <div className="welcome__actions">
-          <button className="button button--primary" onClick={onStart}>
-            Quero analisar meu projeto <ArrowRight size={19} />
-          </button>
-          {recovered && (
-            <button className="button button--text" onClick={onResume}>
-              Continuar de onde parei
+    <div className="welcome-page">
+      <section className="welcome welcome--visitor" id="inicio" aria-labelledby="welcome-title">
+        <div className="hero-visual" aria-hidden="true">
+          <i className="hero-visual__path hero-visual__path--one" />
+          <i className="hero-visual__path hero-visual__path--two" />
+          <span className="hero-visual__node hero-visual__node--one"><ScanSearch size={22} /></span>
+          <span className="hero-visual__node hero-visual__node--two"><Waypoints size={22} /></span>
+          <span className="hero-visual__node hero-visual__node--three"><Sparkles size={22} /></span>
+        </div>
+        <div className="welcome__copy">
+          <p className="eyebrow">UMA ANÁLISE SOBRE O MOMENTO DO SEU NEGÓCIO</p>
+          <h1 id="welcome-title">Antes de pensar em um site, vamos entender o que o seu negócio precisa.</h1>
+          <p className="welcome__lead">
+            Todo negócio vive um momento diferente. Talvez você precise organizar melhor seus serviços, fortalecer a confiança, apresentar produtos ou facilitar novos contatos.
+          </p>
+          <p>
+            Responda algumas perguntas rápidas. Ao final, você receberá uma recomendação inicial construída a partir das suas respostas.
+          </p>
+          <div className="welcome__actions">
+            <button className="button button--primary" onClick={onStart}>
+              Quero analisar meu projeto <ArrowRight size={19} />
             </button>
-          )}
+            {recovered && (
+              <button className="button button--text" onClick={onResume}>
+                Continuar de onde parei
+              </button>
+            )}
+            <a className="next-hint" href="#portfolio-title">Ver projetos reais <ArrowDown size={16} /></a>
+          </div>
+          <div className="hero-metrics" aria-label="Experiência e duração">
+            <span><BriefcaseBusiness size={18} /><strong>+220</strong><small>projetos em 3 anos</small></span>
+            <span><Code2 size={18} /><strong>2010</strong><small>início no design</small></span>
+            <span><Clock3 size={18} /><strong>2 min</strong><small>para o diagnóstico</small></span>
+          </div>
         </div>
-        <div className="proof" aria-label="Experiencia profissional">
-          <strong>+200</strong>
-          <span>websites entregues</span>
-          <i />
-          <strong>2010</strong>
-          <span>inicio no design</span>
+      </section>
+
+      <section className="portfolio-showcase" aria-labelledby="portfolio-title">
+        <div className="section-heading" data-reveal>
+          <div>
+            <p className="eyebrow">PROJETOS QUE SAÍRAM DO PLANEJAMENTO</p>
+            <h2 id="portfolio-title">Estratégia também precisa aparecer no resultado.</h2>
+          </div>
+          <p>Três projetos reais, em segmentos diferentes, desenvolvidos para transformar informação em uma experiência clara.</p>
         </div>
-      </div>
-    </section>
+        <div className="portfolio-grid">
+          <a className="portfolio-card" href="https://difalux.com.br" target="_blank" rel="noreferrer" data-reveal>
+            <div className="portfolio-card__image"><img src="/assets/portfolio/difalux.png" alt="Página inicial do site Difalux" /></div>
+            <div><span>EMPRESAS</span><h3>Difalux</h3><ArrowUpRight size={20} /></div>
+          </a>
+          <a className="portfolio-card" href="https://drandreluiznogueira.com.br" target="_blank" rel="noreferrer" data-reveal>
+            <div className="portfolio-card__image"><img src="/assets/portfolio/dr-andre.png" alt="Página inicial do site Dr. André Luiz Nogueira" /></div>
+            <div><span>SAÚDE</span><h3>Dr. André Luiz Nogueira</h3><ArrowUpRight size={20} /></div>
+          </a>
+          <a className="portfolio-card" href="https://ubraapp.com" target="_blank" rel="noreferrer" data-reveal>
+            <div className="portfolio-card__image"><img src="/assets/portfolio/ubra.png" alt="Página inicial do site UBRA" /></div>
+            <div><span>TECNOLOGIA</span><h3>UBRA</h3><ArrowUpRight size={20} /></div>
+          </a>
+        </div>
+      </section>
+
+      <section className="about-band" aria-labelledby="about-title">
+        <div className="about-band__image" data-reveal>
+          <img src="/assets/photo/cassiano-galvao.jpg" alt="Cassiano Galvão" />
+          <span><MapPin size={16} /> Nova Friburgo, RJ</span>
+        </div>
+        <div className="about-band__copy" data-reveal>
+          <p className="eyebrow">QUEM VAI ANALISAR O SEU PROJETO</p>
+          <h2 id="about-title">Design desde 2010. Estratégia antes da interface.</h2>
+          <p>Sou Cassiano Galvão. Comecei a trabalhar aos 15 anos e construí minha trajetória criando projetos digitais para empresas de diferentes segmentos.</p>
+          <p>Hoje atuo no planejamento e desenvolvimento de sites, interfaces e aplicações web. Meu trabalho começa entendendo o negócio, o público e o resultado esperado; o visual vem para dar forma a essa direção.</p>
+          <p>Moro em Nova Friburgo, sou casado com Alana e pai da Maria e do Arthur. Fora do trabalho, gosto de videogame, de criar coisas novas e de acompanhar o Flamengo.</p>
+          <div className="about-band__signals">
+            <span><PanelTop size={18} /> Sites e interfaces</span>
+            <span><Waypoints size={18} /> Planejamento digital</span>
+            <span><Heart size={18} /> Projetos com contexto</span>
+          </div>
+          <button className="button button--primary" onClick={onStart}>Analisar meu projeto <ArrowRight size={18} /></button>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -728,7 +802,7 @@ function fireAnswerEvent(question: Question) {
 }
 
 function Ambient() {
-  return <><div className="ambient-line" aria-hidden="true" /><div className="ambient-glow" aria-hidden="true" /></>;
+  return <><div className="ambient-line" aria-hidden="true" /><div className="ambient-grid" aria-hidden="true" /><div className="ambient-beam" aria-hidden="true" /></>;
 }
 
 const rootElement = document.getElementById("root")!;
