@@ -136,7 +136,7 @@ Feedbacks:
 
 ### O que entendi
 
-Texto dinâmico que combina situação, objetivo e canal em linguagem humana.
+Texto dinâmico escrito por cenário, objetivo e canal. As respostas não devem ser repetidas como rótulos; devem ser interpretadas em frases naturais que expliquem o momento do visitante.
 
 ### Principal desafio
 
@@ -182,11 +182,11 @@ Lista de elementos relevantes já existente, traduzida para linguagem do visitan
 ## 8. Contato
 
 - Eyebrow: `PRÓXIMO PASSO`
-- Título: `Quer revisar esta recomendação comigo?`
-- Apoio: `Podemos considerar as particularidades do negócio, os materiais disponíveis e entender se essa direção realmente faz sentido.`
+- Título: `Deixe seu contato. A gente continua pelo WhatsApp.`
+- Apoio: `Vou revisar suas respostas antes da conversa para entender melhor o projeto e verificar se esta direção realmente faz sentido.`
 - Formulário: `WhatsApp` / `E-mail (opcional)`.
-- Consentimento: `Autorizo o uso destes dados para receber o resumo e conversar sobre este projeto.`
-- Botão: `Salvar e continuar`
+- Consentimento: `Autorizo o uso destes dados para continuar esta conversa sobre o projeto.`
+- Botão: `Continuar pelo WhatsApp`
 - Sucesso: `Tudo certo. Seu resumo está pronto para a conversa.`
 - WhatsApp: `Quero conversar sobre esta recomendação`
 

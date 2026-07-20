@@ -18,7 +18,8 @@ import {
 import { gsap } from "gsap";
 import { questions, Question, QuestionOption } from "./content/questions";
 import { modules } from "./content/recommendations";
-import { chapters, getFeedback, getResultCopy } from "./content/copy-engine";
+import { chapters, getFeedback } from "./content/copy-engine";
+import { getResultCopy } from "./content/result-copy";
 import { getRecommendation } from "./rules/recommendation-engine";
 import { initialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
@@ -573,8 +574,8 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
 
       <section className="next-step" data-result>
         <p className="section-label">PRÓXIMO PASSO</p>
-        <h2>Quer revisar esta recomendação comigo?</h2>
-        <p>Podemos considerar as particularidades do negócio, os materiais disponíveis e entender se essa direção realmente faz sentido.</p>
+        <h2>Deixe seu contato. A gente continua pelo WhatsApp.</h2>
+        <p>Vou revisar suas respostas antes da conversa para entender melhor o projeto e verificar se esta direção realmente faz sentido.</p>
 
         <form className="contact" onSubmit={onSubmit} noValidate>
           <label className="field">
@@ -605,13 +606,13 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
           </label>
           <label className="consent">
             <input type="checkbox" checked={lead.consentimento} onChange={(event) => onUpdate("consentimento", event.target.checked)} />
-            <span>Autorizo o uso destes dados para receber o resumo e conversar sobre este projeto.</span>
+            <span>Autorizo o uso destes dados para continuar esta conversa sobre o projeto.</span>
           </label>
           {errors.consentimento && <small role="alert">{errors.consentimento}</small>}
 
           <div className="stage-actions">
             <button type="button" className="button button--secondary" onClick={onBack}><ArrowLeft size={17} /> Revisar</button>
-            <button type="submit" className="button button--primary"><Send size={17} /> Salvar e continuar</button>
+            <button type="submit" className="button button--primary"><Send size={17} /> Continuar pelo WhatsApp</button>
           </div>
         </form>
 

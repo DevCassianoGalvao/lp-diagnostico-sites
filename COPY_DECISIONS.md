@@ -121,3 +121,23 @@
 - Princípio: honestidade e responsabilidade.
 - Efeito esperado: mais credibilidade e melhores conversas posteriores.
 - Local: introdução e encerramento do resultado.
+
+## 15. Interpretação em vez de concatenação
+
+- Texto anterior: "o contexto que mais se aproxima da sua realidade é... sua prioridade é...".
+- Texto novo: frases próprias para cada situação, objetivo, canal e forma de decisão.
+- Motivo: repetir os rótulos escolhidos faz a resposta parecer gerada por um formulário.
+- Dor atendida: resultado robotizado e pouco pessoal.
+- Princípio: interpretar antes de recomendar.
+- Efeito esperado: leitura mais natural, específica e convincente.
+- Local: "O que entendi", "Principal desafio", "Oportunidade" e justificativa da estrutura.
+
+## 16. Continuidade honesta pelo WhatsApp
+
+- Texto anterior: "Quer revisar esta recomendação comigo?".
+- Texto novo: "Deixe seu contato. A gente continua pelo WhatsApp.".
+- Motivo: tornar o próximo passo mais direto sem afirmar que o contato será enviado automaticamente.
+- Dor atendida: CTA abstrato e distante da ação esperada.
+- Princípio: clareza sem promessa funcional falsa.
+- Efeito esperado: mais entendimento sobre o próximo passo.
+- Local: formulário final.
