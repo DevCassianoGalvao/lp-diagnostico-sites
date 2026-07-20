@@ -18,6 +18,7 @@ import {
 import { gsap } from "gsap";
 import { questions, Question, QuestionOption } from "./content/questions";
 import { modules } from "./content/recommendations";
+import { chapters, getFeedback, getResultCopy } from "./content/copy-engine";
 import { getRecommendation } from "./rules/recommendation-engine";
 import { initialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
@@ -76,7 +77,7 @@ function App() {
   useEffect(() => {
     if (!["questions", "processing", "result"].includes(screen)) return;
     const session: SavedSession = { lead, step: safeStep, completed, savedAt: new Date().toISOString() };
-    if (!saveSession(session)) setAnnouncement("Nao consegui salvar neste dispositivo. Evite fechar a pagina.");
+    if (!saveSession(session)) setAnnouncement("Não foi possível salvar neste dispositivo. Para não perder as respostas, evite fechar a página.");
   }, [lead, safeStep, completed, screen]);
 
   function startFresh() {
@@ -110,7 +111,7 @@ function App() {
     setLeadSent(false);
     setSummaryOpen(false);
     setErrors({});
-    setAnnouncement("Analise reiniciada.");
+    setAnnouncement("Análise reiniciada.");
     setScreen("welcome");
     track("restart_diagnosis");
   }
@@ -204,22 +205,22 @@ function App() {
     setStep(index);
     setScreen("questions");
     setSummaryOpen(false);
-    setAnnouncement("Resposta aberta para edicao. As recomendacoes serao recalculadas.");
+    setAnnouncement("Resposta aberta para edição. A leitura será atualizada com a nova informação.");
     track("edit_answer", { field: questionId });
   }
 
   function submitLead(event: React.FormEvent) {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
-    if (!isValidWhatsapp(lead.whatsapp)) nextErrors.whatsapp = "Confira o numero com DDD.";
-    if (!isValidEmail(lead.email)) nextErrors.email = "Este e-mail parece incompleto.";
-    if (!lead.consentimento) nextErrors.consentimento = "Autorize o envio para continuar.";
+    if (!isValidWhatsapp(lead.whatsapp)) nextErrors.whatsapp = "Confira o número e inclua o DDD.";
+    if (!isValidEmail(lead.email)) nextErrors.email = "Confira se o e-mail foi digitado por completo.";
+    if (!lead.consentimento) nextErrors.consentimento = "Autorize o envio do resumo para continuar.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     track("lead_submit", { recommendation: result.recommendation.id });
     track("qualified_lead", { recommendation: result.recommendation.id, modules: result.moduleKeys });
     setLeadSent(true);
-    setAnnouncement("Contato validado. Sua recomendacao esta pronta para a conversa.");
+    setAnnouncement("Tudo certo. Seu resumo está pronto para a conversa.");
   }
 
   const whatsappUrl = buildWhatsappUrl(lead, result);
@@ -302,27 +303,27 @@ function Welcome({ recovered, onStart, onResume }: {
   onResume: () => void;
 }) {
   return (
-    <section className="welcome" id="inicio" aria-labelledby="welcome-title">
+    <section className="welcome welcome--visitor" id="inicio" aria-labelledby="welcome-title">
       <div className="welcome__portrait">
         <img src="/assets/photo/cassiano-galvao.jpg" alt="Retrato de Cassiano Galvao" />
         <span className="portrait-tag">WEB DESIGNER · DESDE 2010</span>
       </div>
       <div className="welcome__copy">
-        <p className="eyebrow">UMA CONVERSA SOBRE O SEU PROJETO</p>
-        <h1 id="welcome-title">Prazer, eu sou Cassiano.</h1>
+        <p className="eyebrow">UMA ANÁLISE SOBRE O MOMENTO DO SEU NEGÓCIO</p>
+        <h1 id="welcome-title">Antes de pensar em um site, vamos entender o que o seu negócio precisa.</h1>
         <p className="welcome__lead">
-          Trabalho com design desde 2010 e ja participei da criacao de mais de 200 websites.
+          Todo negócio vive um momento diferente. Talvez você precise organizar melhor seus serviços, fortalecer a confiança, apresentar produtos ou facilitar novos contatos.
         </p>
         <p>
-          Criei esta experiencia para entender o momento do seu negocio e mostrar qual estrutura digital pode fazer sentido para ele.
+          Responda algumas perguntas rápidas. Ao final, você receberá uma recomendação inicial construída a partir das suas respostas.
         </p>
         <div className="welcome__actions">
           <button className="button button--primary" onClick={onStart}>
-            Comecar analise <ArrowRight size={19} />
+            Quero analisar meu projeto <ArrowRight size={19} />
           </button>
           {recovered && (
             <button className="button button--text" onClick={onResume}>
-              Continuar analise salva
+              Continuar de onde parei
             </button>
           )}
         </div>
@@ -341,15 +342,19 @@ function Welcome({ recovered, onStart, onResume }: {
 function Orientation({ onBack, onStart }: { onBack: () => void; onStart: () => void }) {
   return (
     <section className="orientation stage" aria-labelledby="orientation-title">
-      <p className="eyebrow">ANTES DE COMECAR</p>
-      <h1 id="orientation-title">Vou fazer algumas perguntas rapidas.</h1>
+      <p className="eyebrow">ANTES DE COMEÇARMOS</p>
+      <h1 id="orientation-title">Quero conhecer você e o seu negócio.</h1>
       <p>
-        Com base nas suas respostas, vou organizar uma recomendacao inicial para o seu negocio. Voce podera revisar tudo antes de entrar em contato.
+        Eu sou Cassiano Galvão, Web Designer. Criei esta experiência para compreender melhor cada projeto antes de sugerir qualquer estrutura.
       </p>
+      <div className="guide-proof">
+        <img src="/assets/photo/cassiano-galvao.jpg" alt="Retrato de Cassiano Galvão" />
+        <p>Depois de participar de mais de 200 websites, aprendi que uma boa solução não começa pelo layout. Ela começa pelo negócio, pelo público e pelo objetivo.</p>
+      </div>
       <div className="duration"><Clock3 size={20} /> Leva aproximadamente 2 minutos.</div>
       <div className="stage-actions">
         <button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar</button>
-        <button className="button button--primary" onClick={onStart}>Vamos comecar <ArrowRight size={18} /></button>
+        <button className="button button--primary" onClick={onStart}>Vamos começar <ArrowRight size={18} /></button>
       </div>
     </section>
   );
@@ -371,6 +376,7 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
 }) {
   const selected = question.id === "business" ? lead.tipoNegocio : String(lead[question.field] || "");
   const selectedOption = question.options?.find((option) => option.id === selected);
+  const feedback = selectedOption ? getFeedback(question, selectedOption, lead) : null;
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -396,6 +402,7 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
       </div>
 
       <div className="question-stage__content">
+        <p className="eyebrow">{chapters[question.id]}</p>
         <h1 ref={titleRef} tabIndex={-1} id="question-title">{token(question.title, lead)}</h1>
         {question.help && <p className="question-help">{question.help}</p>}
 
@@ -454,10 +461,10 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
           </label>
         )}
 
-        {selectedOption?.ack && (
+        {feedback && (
           <div className="microfeedback" aria-live="polite">
             <CheckCircle2 size={19} />
-            <p>{token(selectedOption.ack, lead)}</p>
+            <div><strong>{feedback.title}</strong><p>{token(feedback.body, lead)}</p></div>
           </div>
         )}
 
@@ -487,9 +494,9 @@ function Processing({ onDone }: { onDone: () => void }) {
   return (
     <section className="processing stage" aria-live="polite">
       <div className="processing__visual" ref={ref} aria-hidden="true"><i /><i /><i /></div>
-      <p className="eyebrow">ANALISE CONCLUIDA</p>
-      <h1>Organizando sua recomendacao...</h1>
-      <p>Relacionando objetivo, momento e caminho de decisao.</p>
+      <p className="eyebrow">JÁ TENHO CONTEXTO SUFICIENTE</p>
+      <h1>Organizando uma leitura inicial do seu cenário...</h1>
+      <p>Relacionando momento, objetivo, canal e forma de decisão.</p>
     </section>
   );
 }
@@ -507,6 +514,7 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
   summaryButtonRef: React.MutableRefObject<HTMLButtonElement | null>;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
+  const copy = getResultCopy(lead, result);
 
   useEffect(() => {
     sectionRef.current?.querySelector<HTMLElement>("h1")?.focus();
@@ -517,27 +525,36 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
   return (
     <section className="result" ref={sectionRef} aria-labelledby="result-title">
       <header className="result__intro" data-result>
-        <p className="eyebrow">RECOMENDACAO INICIAL</p>
-        <h1 tabIndex={-1} id="result-title">{token("{nome}, esta e a estrutura que faz mais sentido para {negocio}.", lead)}</h1>
-        <p>{result.summary}</p>
+        <p className="eyebrow">SUA RECOMENDAÇÃO INICIAL</p>
+        <h1 tabIndex={-1} id="result-title">{copy.title}</h1>
+        <p>{copy.limit}</p>
         <button ref={(node) => { summaryButtonRef.current = node; }} className="summary-trigger" onClick={onSummary}><Eye size={17} /> Ver minhas respostas</button>
       </header>
+
+      <section className="result-reading" data-result aria-label="Leitura do cenário">
+        <article><p className="section-label">O QUE ENTENDI</p><p>{copy.understood}</p></article>
+        <article><p className="section-label">PRINCIPAL DESAFIO</p><p>{copy.challenge}</p></article>
+        <article><p className="section-label">OPORTUNIDADE</p><p>{copy.opportunity}</p></article>
+      </section>
 
       <section className="recommendation" data-result aria-labelledby="recommendation-title">
         <Sparkles size={28} />
         <div>
-          <p className="section-label">ESTRUTURA RECOMENDADA</p>
+          <p className="section-label">ESTRUTURA SUGERIDA</p>
           <h2 id="recommendation-title">{result.recommendation.title}</h2>
           <strong>{result.recommendation.headline}</strong>
           <p>{result.recommendation.body}</p>
+          <h3>Por que pode fazer sentido</h3>
+          <p>{copy.why}</p>
+          <p className="section-label recommendation__include">O QUE PODERIA FAZER PARTE</p>
           <ul>{result.recommendation.structure.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
       </section>
 
       {result.moduleKeys.length > 0 && (
         <section className="priorities" data-result aria-labelledby="priorities-title">
-          <p className="section-label">PRIORIDADES COMPLEMENTARES</p>
-          <h2 id="priorities-title">O que merece entrar no planejamento</h2>
+          <p className="section-label">APOIOS POSSÍVEIS</p>
+          <h2 id="priorities-title">O que também pode ajudar</h2>
           <div className="priority-list">
             {result.moduleKeys.map((key) => (
               <article key={key}>
@@ -549,10 +566,15 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
         </section>
       )}
 
+      <section className="result-boundaries" data-result>
+        <article><p className="section-label">O QUE NÃO PARECE PRIORIDADE AGORA</p><p>{copy.notPriority}</p></article>
+        <article><p className="section-label">EXPERIÊNCIA E LIMITES</p><p>{copy.proof}</p></article>
+      </section>
+
       <section className="next-step" data-result>
-        <p className="section-label">PROXIMO PASSO</p>
-        <h2>Vamos transformar essa leitura em um projeto real?</h2>
-        <p>Deixe um contato para registrar o diagnostico. Depois disso, voce escolhe se quer abrir a conversa no WhatsApp.</p>
+        <p className="section-label">PRÓXIMO PASSO</p>
+        <h2>Quer revisar esta recomendação comigo?</h2>
+        <p>Podemos considerar as particularidades do negócio, os materiais disponíveis e entender se essa direção realmente faz sentido.</p>
 
         <form className="contact" onSubmit={onSubmit} noValidate>
           <label className="field">
@@ -583,26 +605,26 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
           </label>
           <label className="consent">
             <input type="checkbox" checked={lead.consentimento} onChange={(event) => onUpdate("consentimento", event.target.checked)} />
-            <span>Concordo em receber este diagnostico e um contato relacionado ao projeto.</span>
+            <span>Autorizo o uso destes dados para receber o resumo e conversar sobre este projeto.</span>
           </label>
           {errors.consentimento && <small role="alert">{errors.consentimento}</small>}
 
           <div className="stage-actions">
             <button type="button" className="button button--secondary" onClick={onBack}><ArrowLeft size={17} /> Revisar</button>
-            <button type="submit" className="button button--primary"><Send size={17} /> Salvar contato</button>
+            <button type="submit" className="button button--primary"><Send size={17} /> Salvar e continuar</button>
           </div>
         </form>
 
         {leadSent && (
           <div className="contact-success" aria-live="polite">
             <CheckCircle2 size={22} />
-            <div><strong>Contato validado.</strong><span>Agora voce pode iniciar a conversa com o resumo preenchido.</span></div>
+            <div><strong>Tudo certo.</strong><span>Seu resumo está pronto para a conversa.</span></div>
             {hasConfiguredWhatsapp ? (
               <a className="button button--whatsapp" href={whatsappUrl} target="_blank" rel="noreferrer" onClick={() => track("whatsapp_click", { cta_contexto: result.recommendation.id })}>
                 <MessageCircle size={18} /> {result.recommendation.cta}
               </a>
             ) : (
-              <button className="button button--whatsapp" disabled><MessageCircle size={18} /> WhatsApp indisponivel nesta previa</button>
+              <button className="button button--whatsapp" disabled><MessageCircle size={18} /> O WhatsApp ainda não está disponível nesta prévia</button>
             )}
           </div>
         )}
