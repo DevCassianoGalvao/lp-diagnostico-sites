@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import {
   ArrowLeft,
-  ArrowDown,
   ArrowRight,
   ArrowUpRight,
   BriefcaseBusiness,
@@ -12,11 +11,8 @@ import {
   Code2,
   Edit3,
   Eye,
-  Heart,
   Layers3,
-  MapPin,
   MessageCircle,
-  PanelTop,
   RefreshCcw,
   ScanSearch,
   Send,
@@ -29,6 +25,7 @@ import { questions, Question, QuestionOption } from "./content/questions";
 import { modules } from "./content/recommendations";
 import { chapters, getFeedback } from "./content/copy-engine";
 import { getResultCopy } from "./content/result-copy";
+import { getPortfolioForNiche, portfolioProjects, PortfolioProject } from "./content/portfolio";
 import { getRecommendation } from "./rules/recommendation-engine";
 import { initialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
@@ -317,47 +314,27 @@ function Welcome({ recovered, onStart, onResume }: {
     gsap.fromTo(".welcome__copy > *", { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.62, stagger: 0.08, ease: "power2.out" });
     gsap.fromTo(".hero-visual__node", { autoAlpha: 0, scale: 0.76 }, { autoAlpha: 1, scale: 1, duration: 0.55, stagger: 0.12, delay: 0.25, ease: "back.out(1.6)" });
 
-    const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      });
-    }, { threshold: 0.18 });
-    elements.forEach((element) => observer.observe(element));
-    return () => observer.disconnect();
+    gsap.fromTo(".hero-project", { autoAlpha: 0, x: 24, rotate: 1.5 }, { autoAlpha: 1, x: 0, rotate: 0, duration: 0.62, stagger: 0.1, delay: 0.2, ease: "power2.out" });
   }, []);
 
   return (
     <div className="welcome-page">
       <section className="welcome welcome--visitor" id="inicio" aria-labelledby="welcome-title">
-        <div className="hero-visual" aria-hidden="true">
-          <i className="hero-visual__path hero-visual__path--one" />
-          <i className="hero-visual__path hero-visual__path--two" />
-          <span className="hero-visual__node hero-visual__node--one"><ScanSearch size={22} /></span>
-          <span className="hero-visual__node hero-visual__node--two"><Waypoints size={22} /></span>
-          <span className="hero-visual__node hero-visual__node--three"><Sparkles size={22} /></span>
-        </div>
         <div className="welcome__copy">
-          <p className="eyebrow">UMA ANÁLISE SOBRE O MOMENTO DO SEU NEGÓCIO</p>
-          <h1 id="welcome-title">Antes de pensar em um site, vamos entender o que o seu negócio precisa.</h1>
+          <p className="eyebrow">DIAGNÓSTICO DIGITAL EM 2 MINUTOS</p>
+          <h1 id="welcome-title">O que o seu negócio precisa construir agora?</h1>
           <p className="welcome__lead">
-            Todo negócio vive um momento diferente. Talvez você precise organizar melhor seus serviços, fortalecer a confiança, apresentar produtos ou facilitar novos contatos.
-          </p>
-          <p>
-            Responda algumas perguntas rápidas. Ao final, você receberá uma recomendação inicial construída a partir das suas respostas.
+            Responda algumas perguntas e receba uma direção inicial para o seu site, com prioridades pensadas para o seu momento.
           </p>
           <div className="welcome__actions">
             <button className="button button--primary" onClick={onStart}>
-              Quero analisar meu projeto <ArrowRight size={19} />
+              Começar meu diagnóstico <ArrowRight size={19} />
             </button>
             {recovered && (
               <button className="button button--text" onClick={onResume}>
                 Continuar de onde parei
               </button>
             )}
-            <a className="next-hint" href="#portfolio-title">Ver projetos reais <ArrowDown size={16} /></a>
           </div>
           <div className="hero-metrics" aria-label="Experiência e duração">
             <span><BriefcaseBusiness size={18} /><strong>+220</strong><small>projetos em 3 anos</small></span>
@@ -365,49 +342,19 @@ function Welcome({ recovered, onStart, onResume }: {
             <span><Clock3 size={18} /><strong>2 min</strong><small>para o diagnóstico</small></span>
           </div>
         </div>
-      </section>
-
-      <section className="portfolio-showcase" aria-labelledby="portfolio-title">
-        <div className="section-heading" data-reveal>
-          <div>
-            <p className="eyebrow">PROJETOS QUE SAÍRAM DO PLANEJAMENTO</p>
-            <h2 id="portfolio-title">Estratégia também precisa aparecer no resultado.</h2>
+        <div className="hero-work" aria-label="Alguns projetos reais desenvolvidos por Cassiano">
+          <div className="hero-work__signal"><ScanSearch size={17} /><span>PROJETOS REAIS</span><strong>+220</strong></div>
+          <div className="hero-work__stack">
+            {portfolioProjects.slice(0, 3).map((project, index) => (
+              <a className={`hero-project hero-project--${index + 1}`} href={project.url} target="_blank" rel="noreferrer" key={project.id}>
+                <img src={project.image} alt={`Projeto ${project.name}`} />
+                <span>{project.category}</span>
+                <strong>{project.name}</strong>
+                <ArrowUpRight size={18} />
+              </a>
+            ))}
           </div>
-          <p>Três projetos reais, em segmentos diferentes, desenvolvidos para transformar informação em uma experiência clara.</p>
-        </div>
-        <div className="portfolio-grid">
-          <a className="portfolio-card" href="https://difalux.com.br" target="_blank" rel="noreferrer" data-reveal>
-            <div className="portfolio-card__image"><img src="/assets/portfolio/difalux.png" alt="Página inicial do site Difalux" /></div>
-            <div><span>EMPRESAS</span><h3>Difalux</h3><ArrowUpRight size={20} /></div>
-          </a>
-          <a className="portfolio-card" href="https://drandreluiznogueira.com.br" target="_blank" rel="noreferrer" data-reveal>
-            <div className="portfolio-card__image"><img src="/assets/portfolio/dr-andre.png" alt="Página inicial do site Dr. André Luiz Nogueira" /></div>
-            <div><span>SAÚDE</span><h3>Dr. André Luiz Nogueira</h3><ArrowUpRight size={20} /></div>
-          </a>
-          <a className="portfolio-card" href="https://ubraapp.com" target="_blank" rel="noreferrer" data-reveal>
-            <div className="portfolio-card__image"><img src="/assets/portfolio/ubra.png" alt="Página inicial do site UBRA" /></div>
-            <div><span>TECNOLOGIA</span><h3>UBRA</h3><ArrowUpRight size={20} /></div>
-          </a>
-        </div>
-      </section>
-
-      <section className="about-band" aria-labelledby="about-title">
-        <div className="about-band__image" data-reveal>
-          <img src="/assets/photo/cassiano-galvao.jpg" alt="Cassiano Galvão" />
-          <span><MapPin size={16} /> Nova Friburgo, RJ</span>
-        </div>
-        <div className="about-band__copy" data-reveal>
-          <p className="eyebrow">QUEM VAI ANALISAR O SEU PROJETO</p>
-          <h2 id="about-title">Design desde 2010. Estratégia antes da interface.</h2>
-          <p>Sou Cassiano Galvão. Comecei a trabalhar aos 15 anos e construí minha trajetória criando projetos digitais para empresas de diferentes segmentos.</p>
-          <p>Hoje atuo no planejamento e desenvolvimento de sites, interfaces e aplicações web. Meu trabalho começa entendendo o negócio, o público e o resultado esperado; o visual vem para dar forma a essa direção.</p>
-          <p>Moro em Nova Friburgo, sou casado com Alana e pai da Maria e do Arthur. Fora do trabalho, gosto de videogame, de criar coisas novas e de acompanhar o Flamengo.</p>
-          <div className="about-band__signals">
-            <span><PanelTop size={18} /> Sites e interfaces</span>
-            <span><Waypoints size={18} /> Planejamento digital</span>
-            <span><Heart size={18} /> Projetos com contexto</span>
-          </div>
-          <button className="button button--primary" onClick={onStart}>Analisar meu projeto <ArrowRight size={18} /></button>
+          <p>Uma amostra do trabalho. Outros projetos aparecem durante a análise, conforme o seu contexto.</p>
         </div>
       </section>
     </div>
@@ -418,13 +365,17 @@ function Orientation({ onBack, onStart }: { onBack: () => void; onStart: () => v
   return (
     <section className="orientation stage" aria-labelledby="orientation-title">
       <p className="eyebrow">ANTES DE COMEÇARMOS</p>
-      <h1 id="orientation-title">Quero conhecer você e o seu negócio.</h1>
+      <h1 id="orientation-title">Antes da interface, eu preciso entender o negócio.</h1>
       <p>
-        Eu sou Cassiano Galvão, Web Designer. Criei esta experiência para compreender melhor cada projeto antes de sugerir qualquer estrutura.
+        Eu sou Cassiano Galvão. Trabalho com design desde 2010 e criei esta experiência para compreender cada projeto antes de sugerir qualquer estrutura.
       </p>
-      <div className="guide-proof">
+      <div className="guide-intro">
         <img src="/assets/photo/cassiano-galvao.jpg" alt="Retrato de Cassiano Galvão" />
-        <p>Depois de participar de mais de 200 websites, aprendi que uma boa solução não começa pelo layout. Ela começa pelo negócio, pelo público e pelo objetivo.</p>
+        <div>
+          <strong>Estratégia antes da interface.</strong>
+          <p>Comecei a trabalhar aos 15 anos e participei de centenas de projetos para empresas de segmentos diferentes. Hoje planejo e desenvolvo sites, interfaces e aplicações web.</p>
+          <span><BriefcaseBusiness size={16} /> +220 projetos nos últimos 3 anos</span>
+        </div>
       </div>
       <div className="duration"><Clock3 size={20} /> Leva aproximadamente 2 minutos.</div>
       <div className="stage-actions">
@@ -543,6 +494,12 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
           </div>
         )}
 
+        {feedback && question.id === "niche" && (
+          <PortfolioMoment niche={lead.nicho} />
+        )}
+
+        {feedback && question.id === "level" && <GuideMoment />}
+
         <div className="stage-actions stage-actions--question">
           <button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar</button>
           <button className="button button--primary" disabled={!canContinue} onClick={onNext}>
@@ -551,6 +508,49 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
         </div>
       </div>
     </section>
+  );
+}
+
+function PortfolioMoment({ niche }: { niche: string }) {
+  const projects = getPortfolioForNiche(niche);
+  return (
+    <aside className="context-moment" aria-labelledby="context-projects-title">
+      <div className="context-moment__heading">
+        <div>
+          <p className="section-label">ALGUNS CONTEXTOS QUE JÁ TRABALHEI</p>
+          <h2 id="context-projects-title">Projetos reais, não referências genéricas.</h2>
+        </div>
+        <span>Arraste para ver mais</span>
+      </div>
+      <div className="portfolio-rail">
+        {projects.map((project) => <PortfolioMiniCard project={project} key={project.id} />)}
+      </div>
+    </aside>
+  );
+}
+
+function PortfolioMiniCard({ project }: { project: PortfolioProject }) {
+  return (
+    <a className="portfolio-mini" href={project.url} target="_blank" rel="noreferrer">
+      <div><img src={project.image} alt={`Projeto ${project.name}`} /></div>
+      <span>{project.category}</span>
+      <strong>{project.name}</strong>
+      <ArrowUpRight size={17} />
+    </a>
+  );
+}
+
+function GuideMoment() {
+  return (
+    <aside className="guide-moment">
+      <img src="/assets/photo/cassiano-galvao.jpg" alt="Cassiano Galvão" />
+      <div>
+        <p className="section-label">QUEM VAI LER AS SUAS RESPOSTAS</p>
+        <h2>Não é um orçamento automático.</h2>
+        <p>Eu uso este diagnóstico para chegar à conversa entendendo o seu momento. Moro em Nova Friburgo, sou casado com Alana, pai da Maria e do Arthur, e desenvolvo projetos digitais desde 2010.</p>
+      </div>
+      <Waypoints size={24} aria-hidden="true" />
+    </aside>
   );
 }
 
