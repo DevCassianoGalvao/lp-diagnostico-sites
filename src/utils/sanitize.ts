@@ -8,7 +8,9 @@ export function cleanText(value: string, max = 120) {
 
 export function firstName(value: string) {
   const clean = cleanText(value, 40).toLocaleLowerCase("pt-BR");
-  return clean.replace(/\b([\p{L}])/gu, (letter) => letter.toLocaleUpperCase("pt-BR"));
+  return clean.replace(/(^|[^\p{L}\p{M}])(\p{L})/gu, (_, separator: string, letter: string) => (
+    separator + letter.toLocaleUpperCase("pt-BR")
+  ));
 }
 
 export function businessName(value: string) {
