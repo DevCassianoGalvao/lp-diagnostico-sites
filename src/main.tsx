@@ -17,7 +17,6 @@ import {
   ScanSearch,
   Send,
   Sparkles,
-  Waypoints,
   X
 } from "lucide-react";
 import { gsap } from "gsap";
@@ -30,7 +29,7 @@ import { getRecommendation } from "./rules/recommendation-engine";
 import { initialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
 import { track } from "./analytics/events";
-import { buildWhatsappUrl, hasConfiguredWhatsapp } from "./services/whatsapp";
+import { buildWhatsappUrl, DIRECT_WHATSAPP_URL, hasConfiguredWhatsapp } from "./services/whatsapp";
 import { businessName, cleanText, firstName } from "./utils/sanitize";
 import { isValidEmail, isValidWhatsapp } from "./utils/validators";
 import "./styles/global.css";
@@ -236,6 +235,15 @@ function App() {
     <main className={`app app--${screen}`}>
       <Ambient />
       <Header compact={screen !== "welcome"} />
+      <a
+        className="floating-whatsapp"
+        href={DIRECT_WHATSAPP_URL}
+        target="_blank"
+        rel="noreferrer"
+        onClick={() => track("whatsapp_click", { source: "floating_button" })}
+      >
+        <MessageCircle size={19} /> Ir logo para WhatsApp
+      </a>
       <p className="sr-only" aria-live="polite">{announcement}</p>
 
       {screen === "welcome" && (
@@ -498,8 +506,6 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
           <PortfolioMoment niche={lead.nicho} />
         )}
 
-        {feedback && question.id === "level" && <GuideMoment />}
-
         <div className="stage-actions stage-actions--question">
           <button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar</button>
           <button className="button button--primary" disabled={!canContinue} onClick={onNext}>
@@ -537,20 +543,6 @@ function PortfolioMiniCard({ project }: { project: PortfolioProject }) {
       <strong>{project.name}</strong>
       <ArrowUpRight size={17} />
     </a>
-  );
-}
-
-function GuideMoment() {
-  return (
-    <aside className="guide-moment">
-      <img src="/assets/photo/cassiano-galvao.jpg" alt="Cassiano Galvão" />
-      <div>
-        <p className="section-label">QUEM VAI LER AS SUAS RESPOSTAS</p>
-        <h2>Não é um orçamento automático.</h2>
-        <p>Eu uso este diagnóstico para chegar à conversa entendendo o seu momento. Moro em Nova Friburgo, sou casado com Alana, pai da Maria e do Arthur, e desenvolvo projetos digitais desde 2010.</p>
-      </div>
-      <Waypoints size={24} aria-hidden="true" />
-    </aside>
   );
 }
 

@@ -2,8 +2,9 @@ import { Lead } from "../state/lead-state";
 import { RecommendationResult } from "../rules/recommendation-engine";
 import { answerLabel } from "../content/copy-engine";
 
-export const WHATSAPP_NUMBER = "5500000000000";
+export const WHATSAPP_NUMBER = "5522997560717";
 export const hasConfiguredWhatsapp = !/^55(?:0)+$/.test(WHATSAPP_NUMBER);
+export const DIRECT_WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá Cassiano, quero desenvolver um site!")}`;
 
 export function buildWhatsappUrl(lead: Lead, result: RecommendationResult) {
   const nome = lead.nome || "não informado";
