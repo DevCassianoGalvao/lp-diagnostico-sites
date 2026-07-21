@@ -61,8 +61,6 @@ function App() {
   const [screen, setScreen] = useState<Screen>("welcome");
   const [completed, setCompleted] = useState(Boolean(recovered?.completed));
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [leadSent, setLeadSent] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const summaryButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -92,8 +90,6 @@ function App() {
     setLead(initialLead);
     setStep(0);
     setCompleted(false);
-    setLeadSent(false);
-    setErrors({});
     setScreen("orientation");
     track("start_diagnosis");
   }
@@ -114,21 +110,17 @@ function App() {
     setLead(initialLead);
     setStep(0);
     setCompleted(false);
-    setLeadSent(false);
     setSummaryOpen(false);
-    setErrors({});
     setAnnouncement("Análise reiniciada.");
     setScreen("welcome");
     track("restart_diagnosis");
   }
 
   function update<K extends LeadKey>(key: K, value: Lead[K]) {
-    setErrors((currentErrors) => ({ ...currentErrors, [key]: "" }));
     setLead((currentLead) => ({ ...currentLead, [key]: value }));
   }
 
   function applyOption(question: Question, option: QuestionOption) {
-    setErrors({});
     setLead((currentLead) => {
       const currentSelection = question.id === "business" ? currentLead.tipoNegocio : String(currentLead[question.field] || "");
       const previous = question.options?.find((item) => item.id === currentSelection);
@@ -160,6 +152,13 @@ function App() {
 
   function canContinue(question: Question | undefined) {
     if (!question || question.optional) return true;
+    if (question.id === "name") {
+      return cleanText(lead.nome).length >= 2
+        && isValidWhatsapp(lead.whatsapp)
+        && Boolean(cleanText(lead.email, 80))
+        && isValidEmail(cleanText(lead.email, 80))
+        && lead.consentimento;
+    }
     if (question.type === "text") return cleanText(String(lead[question.field] || "")).length >= 2;
     if (question.type === "single") {
       const selected = question.id === "business" ? lead.tipoNegocio : String(lead[question.field] || "");
@@ -173,6 +172,7 @@ function App() {
 
   function next() {
     if (!current || !canContinue(current)) return;
+    if (current.id === "name") track("lead_submit", { source: "first_step" });
     fireAnswerEvent(current);
     if (current.id === "niche") {
       setScreen("portfolio");
@@ -204,40 +204,24 @@ function App() {
     } else {
       setScreen("orientation");
     }
-    setLeadSent(false);
     track("edit_answer", { field: current?.id });
   }
 
   function finishProcessing() {
     setScreen("result");
     track("recommendation_view", { recommendation: result.recommendation.id });
-    track("contact_form_view");
+    track("qualified_lead", { recommendation: result.recommendation.id, modules: result.moduleKeys });
   }
 
   function editAnswer(questionId: string) {
     const index = activeQuestions.findIndex((question) => question.id === questionId);
     if (index < 0) return;
     setCompleted(false);
-    setLeadSent(false);
     setStep(index);
     setScreen("questions");
     setSummaryOpen(false);
     setAnnouncement("Resposta aberta para edição. A leitura será atualizada com a nova informação.");
     track("edit_answer", { field: questionId });
-  }
-
-  function submitLead(event: React.FormEvent) {
-    event.preventDefault();
-    const nextErrors: Record<string, string> = {};
-    if (!isValidWhatsapp(lead.whatsapp)) nextErrors.whatsapp = "Confira o número e inclua o DDD.";
-    if (!isValidEmail(cleanText(lead.email, 80))) nextErrors.email = "Confira se o e-mail foi digitado por completo.";
-    if (!lead.consentimento) nextErrors.consentimento = "Autorize o envio do resumo para continuar.";
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return;
-    track("lead_submit", { recommendation: result.recommendation.id });
-    track("qualified_lead", { recommendation: result.recommendation.id, modules: result.moduleKeys });
-    setLeadSent(true);
-    setAnnouncement("Tudo certo. Seu resumo está pronto para a conversa.");
   }
 
   const whatsappUrl = buildWhatsappUrl(lead, result);
@@ -297,12 +281,8 @@ function App() {
         <ResultPanel
           lead={lead}
           result={result}
-          errors={errors}
           whatsappUrl={whatsappUrl}
-          leadSent={leadSent}
           onBack={back}
-          onSubmit={submitLead}
-          onUpdate={update}
           onSummary={() => setSummaryOpen(true)}
           summaryButtonRef={summaryButtonRef}
         />
@@ -479,7 +459,7 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
         <h1 ref={titleRef} tabIndex={-1} id="question-title">{token(question.title, lead)}</h1>
         {question.help && <p className="question-help">{question.help}</p>}
 
-        {question.type === "text" && (
+        {question.type === "text" && question.id !== "name" && (
           <label className="field">
             <span className="sr-only">{question.title}</span>
             <input
@@ -490,6 +470,49 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
               onKeyDown={(event) => { if (event.key === "Enter" && canContinue) onNext(); }}
             />
           </label>
+        )}
+
+        {question.id === "name" && (
+          <div className="lead-capture">
+            <label className="field lead-capture__name">
+              <span>Seu nome</span>
+              <input
+                autoFocus
+                value={lead.nome}
+                autoComplete="given-name"
+                placeholder="Digite seu primeiro nome"
+                onChange={(event) => onText("nome", firstName(event.target.value))}
+              />
+            </label>
+            <label className="field">
+              <span>WhatsApp</span>
+              <input
+                value={lead.whatsapp}
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="(22) 99999-9999"
+                aria-invalid={Boolean(lead.whatsapp && !isValidWhatsapp(lead.whatsapp))}
+                onChange={(event) => onText("whatsapp", editableText(event.target.value, 20))}
+              />
+              {lead.whatsapp && !isValidWhatsapp(lead.whatsapp) && <small>Inclua o DDD e confira o número.</small>}
+            </label>
+            <label className="field">
+              <span>E-mail</span>
+              <input
+                value={lead.email}
+                inputMode="email"
+                autoComplete="email"
+                placeholder="voce@empresa.com.br"
+                aria-invalid={Boolean(lead.email && !isValidEmail(cleanText(lead.email, 80)))}
+                onChange={(event) => onText("email", editableText(event.target.value, 80))}
+              />
+              {lead.email && !isValidEmail(cleanText(lead.email, 80)) && <small>Confira se o e-mail está completo.</small>}
+            </label>
+            <label className="consent">
+              <input type="checkbox" checked={lead.consentimento} onChange={(event) => onText("consentimento", event.target.checked)} />
+              <span>Autorizo o uso destes dados para receber o diagnóstico e conversar sobre meu projeto.</span>
+            </label>
+          </div>
         )}
 
         {question.type === "single" && (
@@ -641,15 +664,11 @@ function Processing({ onDone }: { onDone: () => void }) {
   );
 }
 
-function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSubmit, onUpdate, onSummary, summaryButtonRef }: {
+function ResultPanel({ lead, result, whatsappUrl, onBack, onSummary, summaryButtonRef }: {
   lead: Lead;
   result: ReturnType<typeof getRecommendation>;
-  errors: Record<string, string>;
   whatsappUrl: string;
-  leadSent: boolean;
   onBack: () => void;
-  onSubmit: (event: React.FormEvent) => void;
-  onUpdate: <K extends LeadKey>(key: K, value: Lead[K]) => void;
   onSummary: () => void;
   summaryButtonRef: React.MutableRefObject<HTMLButtonElement | null>;
 }) {
@@ -713,61 +732,18 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
 
       <section className="next-step" data-result>
         <p className="section-label">PRÓXIMO PASSO</p>
-        <h2>Deixe seu contato. A gente continua pelo WhatsApp.</h2>
-        <p>Vou revisar suas respostas antes da conversa para entender melhor o projeto e verificar se esta direção realmente faz sentido.</p>
-
-        <form className="contact" onSubmit={onSubmit} noValidate>
-          <label className="field">
-            <span>WhatsApp</span>
-            <input
-              value={lead.whatsapp}
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="(22) 99999-9999"
-              aria-invalid={Boolean(errors.whatsapp)}
-              aria-describedby={errors.whatsapp ? "whatsapp-error" : undefined}
-              onChange={(event) => onUpdate("whatsapp", editableText(event.target.value, 20))}
-            />
-            {errors.whatsapp && <small id="whatsapp-error" role="alert">{errors.whatsapp}</small>}
-          </label>
-          <label className="field">
-            <span>E-mail <i>opcional</i></span>
-            <input
-              value={lead.email}
-              inputMode="email"
-              autoComplete="email"
-              placeholder="voce@empresa.com.br"
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? "email-error" : undefined}
-              onChange={(event) => onUpdate("email", editableText(event.target.value, 80))}
-            />
-            {errors.email && <small id="email-error" role="alert">{errors.email}</small>}
-          </label>
-          <label className="consent">
-            <input type="checkbox" checked={lead.consentimento} onChange={(event) => onUpdate("consentimento", event.target.checked)} />
-            <span>Autorizo o uso destes dados para continuar esta conversa sobre o projeto.</span>
-          </label>
-          {errors.consentimento && <small role="alert">{errors.consentimento}</small>}
-
-          <div className="stage-actions">
-            <button type="button" className="button button--secondary" onClick={onBack}><ArrowLeft size={17} /> Revisar</button>
-            <button type="submit" className="button button--primary"><Send size={17} /> Continuar pelo WhatsApp</button>
-          </div>
-        </form>
-
-        {leadSent && (
-          <div className="contact-success" aria-live="polite">
-            <CheckCircle2 size={22} />
-            <div><strong>Tudo certo.</strong><span>Seu resumo está pronto para a conversa.</span></div>
-            {hasConfiguredWhatsapp ? (
-              <a className="button button--whatsapp" href={whatsappUrl} target="_blank" rel="noreferrer" onClick={() => track("whatsapp_click", { cta_contexto: result.recommendation.id })}>
-                <MessageCircle size={18} /> {result.recommendation.cta}
-              </a>
-            ) : (
-              <button className="button button--whatsapp" disabled><MessageCircle size={18} /> O WhatsApp ainda não está disponível nesta prévia</button>
-            )}
-          </div>
-        )}
+        <h2>Seus dados e seu diagnóstico já estão organizados.</h2>
+        <p>Envie tudo pelo WhatsApp. Por lá, vou pedir algumas informações adicionais para entender melhor o projeto e confirmar esta direção.</p>
+        <div className="final-contact-actions">
+          <button type="button" className="button button--secondary" onClick={onBack}><ArrowLeft size={17} /> Revisar</button>
+          {hasConfiguredWhatsapp ? (
+            <a className="button button--whatsapp" href={whatsappUrl} target="_blank" rel="noreferrer" onClick={() => track("whatsapp_click", { cta_contexto: result.recommendation.id })}>
+              <Send size={18} /> Enviar pelo WhatsApp
+            </a>
+          ) : (
+            <button className="button button--whatsapp" disabled><MessageCircle size={18} /> WhatsApp indisponível</button>
+          )}
+        </div>
       </section>
     </section>
   );

@@ -26,8 +26,8 @@ export const questions: Question[] = [
   {
     id: "name",
     field: "nome",
-    title: "Como posso te chamar?",
-    help: "Vou usar seu nome apenas em momentos importantes desta conversa.",
+    title: "Antes de começar, como posso te chamar?",
+    help: "Deixe também seu WhatsApp e e-mail para eu não perder seu contato enquanto preparo o diagnóstico.",
     type: "text",
     placeholder: "Digite seu primeiro nome"
   },
