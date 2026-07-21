@@ -394,6 +394,7 @@ img { display: block; max-width: 100%; }
 .microfeedback p { max-width: 66ch; margin: 0; color: var(--text-soft); }
 .microfeedback strong { display: block; margin-bottom: 5px; color: var(--green); }
 .stage-actions--question { margin-top: 36px; }
+.capture-error { margin: 12px 0 0; color: var(--danger); font-size: 14px; }
 
 .portfolio-stage {
   width: min(calc(100% - 48px), 1180px);
@@ -481,6 +482,9 @@ img { display: block; max-width: 100%; }
 .button--whatsapp { background: var(--green); color: #03110c; }
 .button--whatsapp:disabled { opacity: 0.48; }
 .final-contact-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 28px; }
+.email-status { margin: 18px 0 0; color: var(--green); font-size: 14px; font-weight: 700; }
+.email-status--error { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--danger); }
+.email-status--error .button { flex: 0 0 auto; min-height: 42px; padding: 9px 13px; }
 
 .drawer-backdrop { position: fixed; z-index: 50; inset: 0; display: flex; justify-content: flex-end; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
 .drawer { width: min(440px, 100%); height: 100%; overflow-y: auto; padding: 28px; background: var(--surface); box-shadow: -24px 0 80px rgba(0, 0, 0, 0.5); }
@@ -606,6 +610,8 @@ img { display: block; max-width: 100%; }
   .lead-capture__name, .lead-capture .consent { grid-column: 1; }
   .final-contact-actions { align-items: stretch; flex-direction: column-reverse; }
   .final-contact-actions .button { width: 100%; }
+  .email-status--error { align-items: stretch; flex-direction: column; }
+  .email-status--error .button { width: 100%; }
 
   .drawer-backdrop { align-items: flex-end; }
   .drawer { width: 100%; height: min(88vh, 760px); border-radius: 12px 12px 0 0; padding: 24px 20px; }

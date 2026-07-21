@@ -67,6 +67,10 @@ Verificacao importante: nenhuma jornada deve recomendar e-commerce, carrinho, ch
 O build fica em `dist/`. Antes de publicar, configure:
 
 - Numero real do WhatsApp em `src/services/whatsapp.ts`.
+- `BREVO_API_KEY`: chave da API Brevo, armazenada como segredo.
+- `BREVO_SENDER_EMAIL`: remetente verificado na Brevo.
+- `LEAD_NOTIFICATION_EMAIL`: e-mail que recebera os leads.
+- `BREVO_SENDER_NAME` e `LEAD_NOTIFICATION_NAME`: nomes opcionais do remetente e destinatario.
 - Politica de privacidade real.
 - IDs reais de analytics fora do codigo-fonte ou em configuracao de ambiente.
 - Cases reais com imagens/URLs autorizadas, se forem exibidos.

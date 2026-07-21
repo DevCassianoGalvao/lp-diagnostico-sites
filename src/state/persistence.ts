@@ -7,6 +7,10 @@ export type SavedSession = {
   step: number;
   completed: boolean;
   savedAt: string;
+  notifications?: {
+    startedAt?: string;
+    completedAt?: string;
+  };
 };
 
 export function loadSession(): SavedSession | null {

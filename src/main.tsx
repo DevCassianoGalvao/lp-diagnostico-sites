@@ -26,10 +26,11 @@ import { chapters, getFeedback } from "./content/copy-engine";
 import { getResultCopy } from "./content/result-copy";
 import { getPortfolioForNiche, portfolioCategories, portfolioProjects, PortfolioProject } from "./content/portfolio";
 import { getRecommendation } from "./rules/recommendation-engine";
-import { initialLead, Lead, LeadKey } from "./state/lead-state";
+import { createInitialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
 import { track } from "./analytics/events";
 import { buildWhatsappUrl, DIRECT_WHATSAPP_URL, hasConfiguredWhatsapp } from "./services/whatsapp";
+import { LeadNotificationPayload, sendLeadNotification } from "./services/lead-notifications";
 import { businessName, cleanText, editableText, firstName } from "./utils/sanitize";
 import { isValidEmail, isValidWhatsapp } from "./utils/validators";
 import "./styles/global.css";
@@ -54,13 +55,58 @@ function visibleQuestions(lead: Lead) {
   return questions.filter((question) => !question.visibleWhen || question.visibleWhen(lead as unknown as Record<string, unknown>));
 }
 
+function buildLeadNotification(
+  phase: LeadNotificationPayload["phase"],
+  lead: Lead,
+  activeQuestions: Question[],
+  result: ReturnType<typeof getRecommendation>
+): LeadNotificationPayload {
+  const payload: LeadNotificationPayload = {
+    phase,
+    leadId: lead.leadId,
+    contact: {
+      name: lead.nome,
+      whatsapp: lead.whatsapp,
+      email: lead.email,
+      consent: lead.consentimento
+    }
+  };
+
+  if (phase === "completed") {
+    const copy = getResultCopy(lead, result);
+    payload.answers = activeQuestions
+      .map((question) => ({ question: shortQuestion(question), answer: answerFor(question, lead) }))
+      .filter((item) => item.answer);
+    payload.diagnosis = {
+      title: copy.title,
+      summary: copy.understood,
+      challenge: copy.challenge,
+      opportunity: copy.opportunity,
+      recommendation: result.recommendation.title,
+      recommendationBody: result.recommendation.body,
+      modules: result.moduleKeys.map((key) => modules[key].title)
+    };
+  }
+
+  return payload;
+}
+
 function App() {
   const [recovered, setRecovered] = useState<SavedSession | null>(() => loadSession());
-  const [lead, setLead] = useState<Lead>(recovered?.lead || initialLead);
+  const [lead, setLead] = useState<Lead>(() => {
+    const current = recovered?.lead || createInitialLead();
+    return current.leadId ? current : { ...current, leadId: createInitialLead().leadId };
+  });
   const [step, setStep] = useState(recovered?.step || 0);
   const [screen, setScreen] = useState<Screen>("welcome");
   const [completed, setCompleted] = useState(Boolean(recovered?.completed));
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [notifications, setNotifications] = useState(recovered?.notifications || {});
+  const [leadSaving, setLeadSaving] = useState(false);
+  const [leadCaptureError, setLeadCaptureError] = useState("");
+  const [diagnosisEmailStatus, setDiagnosisEmailStatus] = useState<"idle" | "sending" | "sent" | "error">(
+    recovered?.notifications?.completedAt ? "sent" : "idle"
+  );
   const [announcement, setAnnouncement] = useState("");
   const summaryButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -80,16 +126,19 @@ function App() {
 
   useEffect(() => {
     if (!["questions", "portfolio", "processing", "result"].includes(screen)) return;
-    const session: SavedSession = { lead, step: safeStep, completed, savedAt: new Date().toISOString() };
+    const session: SavedSession = { lead, step: safeStep, completed, notifications, savedAt: new Date().toISOString() };
     if (!saveSession(session)) setAnnouncement("Não foi possível salvar neste dispositivo. Para não perder as respostas, evite fechar a página.");
-  }, [lead, safeStep, completed, screen]);
+  }, [lead, safeStep, completed, notifications, screen]);
 
   function startFresh() {
     clearSession();
     setRecovered(null);
-    setLead(initialLead);
+    setLead(createInitialLead());
     setStep(0);
     setCompleted(false);
+    setNotifications({});
+    setLeadCaptureError("");
+    setDiagnosisEmailStatus("idle");
     setScreen("orientation");
     track("start_diagnosis");
   }
@@ -107,9 +156,12 @@ function App() {
   function restart() {
     clearSession();
     setRecovered(null);
-    setLead(initialLead);
+    setLead(createInitialLead());
     setStep(0);
     setCompleted(false);
+    setNotifications({});
+    setLeadCaptureError("");
+    setDiagnosisEmailStatus("idle");
     setSummaryOpen(false);
     setAnnouncement("Análise reiniciada.");
     setScreen("welcome");
@@ -170,9 +222,22 @@ function App() {
     return true;
   }
 
-  function next() {
+  async function next() {
     if (!current || !canContinue(current)) return;
-    if (current.id === "name") track("lead_submit", { source: "first_step" });
+    if (current.id === "name" && !notifications.startedAt) {
+      setLeadSaving(true);
+      setLeadCaptureError("");
+      try {
+        await sendLeadNotification(buildLeadNotification("started", lead, activeQuestions, result));
+        setNotifications((value) => ({ ...value, startedAt: new Date().toISOString() }));
+        track("lead_submit", { source: "first_step" });
+      } catch {
+        setLeadCaptureError("Não consegui registrar seu contato agora. Confira a conexão e tente novamente.");
+        setLeadSaving(false);
+        return;
+      }
+      setLeadSaving(false);
+    }
     fireAnswerEvent(current);
     if (current.id === "niche") {
       setScreen("portfolio");
@@ -211,6 +276,20 @@ function App() {
     setScreen("result");
     track("recommendation_view", { recommendation: result.recommendation.id });
     track("qualified_lead", { recommendation: result.recommendation.id, modules: result.moduleKeys });
+    if (!notifications.completedAt) void sendCompletedDiagnosis();
+  }
+
+  async function sendCompletedDiagnosis() {
+    setDiagnosisEmailStatus("sending");
+    try {
+      await sendLeadNotification(buildLeadNotification("completed", lead, activeQuestions, result));
+      setNotifications((value) => ({ ...value, completedAt: new Date().toISOString() }));
+      setDiagnosisEmailStatus("sent");
+      setAnnouncement("Seus dados e seu diagnóstico foram enviados com sucesso.");
+    } catch {
+      setDiagnosisEmailStatus("error");
+      setAnnouncement("Não foi possível enviar o diagnóstico por e-mail. Você ainda pode continuar pelo WhatsApp.");
+    }
   }
 
   function editAnswer(questionId: string) {
@@ -258,6 +337,8 @@ function App() {
           total={activeQuestions.length}
           progress={progress}
           canContinue={canContinue(current)}
+          saving={leadSaving}
+          captureError={leadCaptureError}
           onText={update}
           onOption={(option) => applyOption(current, option)}
           onNext={next}
@@ -282,7 +363,9 @@ function App() {
           lead={lead}
           result={result}
           whatsappUrl={whatsappUrl}
+          emailStatus={diagnosisEmailStatus}
           onBack={back}
+          onRetryEmail={sendCompletedDiagnosis}
           onSummary={() => setSummaryOpen(true)}
           summaryButtonRef={summaryButtonRef}
         />
@@ -412,16 +495,18 @@ function Orientation({ onBack, onStart }: { onBack: () => void; onStart: () => v
   );
 }
 
-function QuestionScreen({ question, lead, step, total, progress, canContinue, onText, onOption, onNext, onBack, onSummary, summaryButtonRef }: {
+function QuestionScreen({ question, lead, step, total, progress, canContinue, saving, captureError, onText, onOption, onNext, onBack, onSummary, summaryButtonRef }: {
   question: Question;
   lead: Lead;
   step: number;
   total: number;
   progress: number;
   canContinue: boolean;
+  saving: boolean;
+  captureError: string;
   onText: <K extends LeadKey>(key: K, value: Lead[K]) => void;
   onOption: (option: QuestionOption) => void;
-  onNext: () => void;
+  onNext: () => void | Promise<void>;
   onBack: () => void;
   onSummary: () => void;
   summaryButtonRef: React.MutableRefObject<HTMLButtonElement | null>;
@@ -565,10 +650,11 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
 
         <div className="stage-actions stage-actions--question">
           <button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar</button>
-          <button className="button button--primary" disabled={!canContinue} onClick={onNext}>
-            Continuar <ArrowRight size={18} />
+          <button className="button button--primary" disabled={!canContinue || saving} onClick={onNext}>
+            {saving ? "Registrando contato..." : "Continuar"} {!saving && <ArrowRight size={18} />}
           </button>
         </div>
+        {captureError && question.id === "name" && <p className="capture-error" role="alert">{captureError}</p>}
       </div>
     </section>
   );
@@ -663,11 +749,13 @@ function Processing({ onDone }: { onDone: () => void }) {
   );
 }
 
-function ResultPanel({ lead, result, whatsappUrl, onBack, onSummary, summaryButtonRef }: {
+function ResultPanel({ lead, result, whatsappUrl, emailStatus, onBack, onRetryEmail, onSummary, summaryButtonRef }: {
   lead: Lead;
   result: ReturnType<typeof getRecommendation>;
   whatsappUrl: string;
+  emailStatus: "idle" | "sending" | "sent" | "error";
   onBack: () => void;
+  onRetryEmail: () => void | Promise<void>;
   onSummary: () => void;
   summaryButtonRef: React.MutableRefObject<HTMLButtonElement | null>;
 }) {
@@ -731,8 +819,17 @@ function ResultPanel({ lead, result, whatsappUrl, onBack, onSummary, summaryButt
 
       <section className="next-step" data-result>
         <p className="section-label">PRÓXIMO PASSO</p>
-        <h2>Seus dados e seu diagnóstico já estão organizados.</h2>
-        <p>Envie tudo pelo WhatsApp. Por lá, vou pedir algumas informações adicionais para entender melhor o projeto e confirmar esta direção.</p>
+        <h2>{emailStatus === "sent" ? "Já tenho seus dados e seu diagnóstico." : "Seus dados e seu diagnóstico estão prontos."}</h2>
+        <p>{emailStatus === "sent"
+          ? "Entrarei em contato pelo WhatsApp para pedir algumas informações adicionais e entender melhor o projeto."
+          : "Estou enviando essas informações. Você também pode iniciar a conversa agora pelo WhatsApp."}</p>
+        {emailStatus === "sending" && <p className="email-status">Enviando diagnóstico...</p>}
+        {emailStatus === "error" && (
+          <div className="email-status email-status--error" role="alert">
+            <span>O envio por e-mail falhou. Tente novamente ou continue pelo WhatsApp.</span>
+            <button type="button" className="button button--secondary" onClick={onRetryEmail}>Tentar novamente</button>
+          </div>
+        )}
         <div className="final-contact-actions">
           <button type="button" className="button button--secondary" onClick={onBack}><ArrowLeft size={17} /> Revisar</button>
           {hasConfiguredWhatsapp ? (

@@ -1,4 +1,5 @@
 export type Lead = {
+  leadId: string;
   nome: string;
   negocio: string;
   tipoNegocio: "" | "empresa" | "marca_pessoal" | "indefinido";
@@ -22,6 +23,7 @@ export type Lead = {
 };
 
 export const initialLead: Lead = {
+  leadId: "",
   nome: "",
   negocio: "",
   tipoNegocio: "",
@@ -43,5 +45,10 @@ export const initialLead: Lead = {
   email: "",
   consentimento: false
 };
+
+export function createInitialLead(): Lead {
+  const randomId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return { ...initialLead, leadId: randomId };
+}
 
 export type LeadKey = keyof Lead;
