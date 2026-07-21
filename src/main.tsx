@@ -336,10 +336,17 @@ function Welcome({ recovered, onStart, onResume }: {
   onStart: () => void;
   onResume: () => void;
 }) {
+  const heroCarouselRef = useRef<HTMLDivElement>(null);
   const coverProjectIds = ["congressis", "dr-andre", "wm-suplementos"];
   const coverProjects = coverProjectIds
     .map((id) => portfolioProjects.find((project) => project.id === id))
     .filter((project): project is PortfolioProject => Boolean(project));
+
+  function scrollHeroProjects(direction: -1 | 1) {
+    const carousel = heroCarouselRef.current;
+    if (!carousel) return;
+    carousel.scrollBy({ left: direction * carousel.clientWidth * 0.9, behavior: "smooth" });
+  }
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -377,7 +384,11 @@ function Welcome({ recovered, onStart, onResume }: {
         </div>
         <div className="hero-work" aria-label="Alguns projetos reais desenvolvidos por Cassiano">
           <div className="hero-work__signal"><ScanSearch size={17} /><span>PROJETOS REAIS</span><strong>+220</strong></div>
-          <div className="hero-work__stack">
+          <div className="hero-work__controls">
+            <button type="button" title="Projeto anterior" aria-label="Ver projeto anterior" onClick={() => scrollHeroProjects(-1)}><ArrowLeft size={18} /></button>
+            <button type="button" title="Próximo projeto" aria-label="Ver próximo projeto" onClick={() => scrollHeroProjects(1)}><ArrowRight size={18} /></button>
+          </div>
+          <div className="hero-work__stack" ref={heroCarouselRef}>
             {coverProjects.map((project, index) => (
               <a className={`hero-project hero-project--${index + 1}`} href={project.url} target="_blank" rel="noreferrer" key={project.id}>
                 <img src={project.image} alt={`Projeto ${project.name}`} />
