@@ -843,7 +843,7 @@ function fireAnswerEvent(question: Question) {
 }
 
 function Ambient() {
-  return <><div className="ambient-line" aria-hidden="true" /><div className="ambient-grid" aria-hidden="true" /><div className="ambient-beam" aria-hidden="true" /></>;
+  return <><div className="ambient-line" aria-hidden="true" /><div className="ambient-grid" aria-hidden="true" /></>;
 }
 
 const rootElement = document.getElementById("root")!;

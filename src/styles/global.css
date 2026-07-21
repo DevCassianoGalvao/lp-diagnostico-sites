@@ -81,19 +81,6 @@ img { display: block; max-width: 100%; }
   pointer-events: none;
 }
 
-.ambient-beam {
-  position: fixed;
-  z-index: -2;
-  top: 18vh;
-  right: 0;
-  width: 48vw;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 239, 158, 0.74), transparent);
-  box-shadow: 0 0 34px rgba(0, 239, 158, 0.22);
-  animation: beamPulse 4.8s ease-in-out infinite;
-  pointer-events: none;
-}
-
 .header {
   width: min(calc(100% - 48px), 1180px);
   min-height: 72px;
@@ -509,11 +496,6 @@ img { display: block; max-width: 100%; }
 .answer-list button { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: var(--purple-hover); font-weight: 600; }
 .drawer > .button { margin-top: 24px; }
 
-@keyframes beamPulse {
-  0%, 100% { opacity: 0.34; transform: scaleX(0.84); }
-  50% { opacity: 0.82; transform: scaleX(1); }
-}
-
 @keyframes iconPulse {
   0%, 100% { opacity: 0.72; filter: drop-shadow(0 0 0 transparent); }
   50% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
@@ -538,8 +520,6 @@ img { display: block; max-width: 100%; }
   .header .brand { width: 112px; }
   .ambient-line { left: 20px; opacity: 0.3; }
   .ambient-grid { background-size: 48px 48px; opacity: 0.3; }
-  .ambient-beam { top: 128px; width: 78vw; }
-
   .welcome { width: calc(100% - 40px); min-height: auto; grid-template-columns: 1fr; gap: 26px; padding: 34px 0 48px; }
   .welcome--visitor { min-height: calc(100vh - 60px); }
   .welcome__portrait { min-height: 340px; max-height: 48vh; order: 2; }
