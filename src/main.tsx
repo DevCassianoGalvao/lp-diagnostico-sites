@@ -242,7 +242,8 @@ function App() {
         rel="noreferrer"
         onClick={() => track("whatsapp_click", { source: "floating_button" })}
       >
-        <MessageCircle size={19} /> Ir logo para WhatsApp
+        <img src="/assets/icons/whatsapp.svg" alt="" aria-hidden="true" />
+        Ir logo para WhatsApp
       </a>
       <p className="sr-only" aria-live="polite">{announcement}</p>
 
@@ -373,7 +374,10 @@ function Orientation({ onBack, onStart }: { onBack: () => void; onStart: () => v
   return (
     <section className="orientation stage" aria-labelledby="orientation-title">
       <p className="eyebrow">ANTES DE COMEÇARMOS</p>
-      <h1 id="orientation-title">Antes da interface, eu preciso entender o negócio.</h1>
+      <h1 id="orientation-title">
+        <span>Antes da interface,</span>
+        <span>eu preciso entender o negócio.</span>
+      </h1>
       <p>
         Eu sou Cassiano Galvão. Trabalho com design desde 2010 e criei esta experiência para compreender cada projeto antes de sugerir qualquer estrutura.
       </p>
