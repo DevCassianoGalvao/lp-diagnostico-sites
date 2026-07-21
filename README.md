@@ -34,9 +34,9 @@ npm.cmd run build
 
 ## Documentacao de UX
 
-- Auditoria: `UI_UX_AUDIT.md`
-- Fluxo e wireframes: `UX_FLOW.md`
-- Sistema visual: `DESIGN_SYSTEM.md`
+- Auditoria: `docs/UI_UX_AUDIT.md`
+- Fluxo e wireframes: `docs/UX_FLOW.md`
+- Sistema visual: `docs/DESIGN_SYSTEM.md`
 
 ## Assets
 
@@ -62,15 +62,30 @@ Use o formulario interativo e combine:
 
 Verificacao importante: nenhuma jornada deve recomendar e-commerce, carrinho, checkout ou pagamento online.
 
-## Publicacao
+## Publicacao no cPanel
 
-O build fica em `dist/`. Antes de publicar, configure:
+O site e publicado em `https://cassianogalvao.com.br/lp/`. O build fica em `dist/`, unica pasta copiada para `public_html/lp` pela configuracao `.cpanel.yml`.
+
+Fluxo de publicacao:
+
+1. Execute `npm.cmd run build` localmente.
+2. Versione a pasta `dist/` junto com o codigo.
+3. Envie a branch `main` para o GitHub.
+4. No Git Version Control do cPanel, atualize o repositorio e use `Deploy HEAD Commit`.
+
+O cPanel exige o arquivo `.cpanel.yml` versionado e uma arvore de trabalho limpa para liberar o deploy.
+
+## Brevo
+
+O endpoint PHP esta em `public/api/leads.php`. A chave nunca deve ser adicionada ao Git. No servidor, crie o arquivo privado:
+
+`$HOME/.config/cassiano-lp-brevo.php`
+
+Use `config/brevo.example.php` como modelo. O arquivo real precisa conter a chave da API, o remetente verificado e o e-mail que recebera as notificacoes.
+
+Antes de publicar, confirme tambem:
 
 - Numero real do WhatsApp em `src/services/whatsapp.ts`.
-- `BREVO_API_KEY`: chave da API Brevo, armazenada como segredo.
-- `BREVO_SENDER_EMAIL`: remetente verificado na Brevo.
-- `LEAD_NOTIFICATION_EMAIL`: e-mail que recebera os leads.
-- `BREVO_SENDER_NAME` e `LEAD_NOTIFICATION_NAME`: nomes opcionais do remetente e destinatario.
 - Politica de privacidade real.
 - IDs reais de analytics fora do codigo-fonte ou em configuracao de ambiente.
 - Cases reais com imagens/URLs autorizadas, se forem exibidos.

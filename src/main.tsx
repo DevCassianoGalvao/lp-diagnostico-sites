@@ -37,6 +37,8 @@ import "./styles/global.css";
 
 type Screen = "welcome" | "orientation" | "questions" | "portfolio" | "processing" | "result";
 
+const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
 declare global {
   interface Window {
     cassianoRoot?: Root;
@@ -322,7 +324,7 @@ function App() {
         rel="noreferrer"
         onClick={() => track("whatsapp_click", { source: "floating_button" })}
       >
-        <img src="/assets/icons/whatsapp.svg" alt="" aria-hidden="true" />
+        <img src={assetUrl("assets/icons/whatsapp.svg")} alt="" aria-hidden="true" />
         Ir logo para WhatsApp
       </a>
       <p className="sr-only" aria-live="polite">{announcement}</p>
@@ -394,7 +396,7 @@ function Header({ compact }: { compact: boolean }) {
   return (
     <header className={compact ? "header header--compact" : "header"}>
       <a className="brand" href="#inicio" aria-label="Cassiano Galvão, página inicial">
-        <img src="/assets/brand/logo-cassiano.svg" alt="Cassiano Galvão" />
+        <img src={assetUrl("assets/brand/logo-cassiano.svg")} alt="Cassiano Galvão" />
       </a>
     </header>
   );
@@ -485,7 +487,7 @@ function Orientation({ onBack, onStart }: { onBack: () => void; onStart: () => v
         Eu sou Cassiano Galvão. Trabalho com design desde 2010 e criei esta experiência para compreender cada projeto antes de sugerir qualquer estrutura.
       </p>
       <div className="guide-intro">
-        <img src="/assets/photo/cassiano-galvao.jpg" alt="Retrato de Cassiano Galvão" />
+        <img src={assetUrl("assets/photo/cassiano-galvao.jpg")} alt="Retrato de Cassiano Galvão" />
         <div>
           <strong>Estratégia antes da interface.</strong>
           <p>Comecei a trabalhar aos 15 anos e participei de centenas de projetos para empresas de segmentos diferentes. Hoje planejo e desenvolvo sites, interfaces e aplicações web.</p>

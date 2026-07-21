@@ -21,7 +21,7 @@ export type LeadNotificationPayload = {
 };
 
 export async function sendLeadNotification(payload: LeadNotificationPayload) {
-  const response = await fetch("/api/leads", {
+  const response = await fetch(`${import.meta.env.BASE_URL}api/leads.php`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
