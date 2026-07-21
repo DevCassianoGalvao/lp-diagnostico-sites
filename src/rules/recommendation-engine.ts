@@ -30,14 +30,14 @@ export function getRecommendation(lead: Lead): RecommendationResult {
   if (lead.canal === "google" || lead.modeloVenda === "pesquisa") moduleSet.add("conteudo");
   if (lead.nivel === "completa") moduleSet.add("automacao");
 
-  const business = lead.tipoNegocio === "indefinido" ? "seu projeto" : lead.negocio || "seu negocio";
+  const business = lead.tipoNegocio === "indefinido" ? "seu projeto" : lead.negocio || "seu negócio";
   return {
     recommendation: recommendations[key],
     moduleKeys: Array.from(moduleSet),
-    summary: `Pelo que voce respondeu, ${business} precisa priorizar ${label(lead.objetivo, lead.objetivoOutro)}, considerando o momento atual e o caminho de decisao do cliente.`
+    summary: `Pelo que você respondeu, ${business} precisa priorizar ${label(lead.objetivo, lead.objetivoOutro)}, considerando o momento atual e o caminho de decisão do cliente.`
   };
 }
 
 function label(value: string, fallback: string) {
-  return fallback || value.replace(/_/g, " ") || "um proximo passo claro";
+  return fallback || value.replace(/_/g, " ") || "um próximo passo claro";
 }

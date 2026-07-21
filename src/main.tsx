@@ -24,7 +24,7 @@ import { questions, Question, QuestionOption } from "./content/questions";
 import { modules } from "./content/recommendations";
 import { chapters, getFeedback } from "./content/copy-engine";
 import { getResultCopy } from "./content/result-copy";
-import { getPortfolioForNiche, portfolioProjects, PortfolioProject } from "./content/portfolio";
+import { getPortfolioForNiche, portfolioCategories, portfolioProjects, PortfolioProject } from "./content/portfolio";
 import { getRecommendation } from "./rules/recommendation-engine";
 import { initialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
@@ -34,7 +34,7 @@ import { businessName, cleanText, firstName } from "./utils/sanitize";
 import { isValidEmail, isValidWhatsapp } from "./utils/validators";
 import "./styles/global.css";
 
-type Screen = "welcome" | "orientation" | "questions" | "processing" | "result";
+type Screen = "welcome" | "orientation" | "questions" | "portfolio" | "processing" | "result";
 
 declare global {
   interface Window {
@@ -43,9 +43,9 @@ declare global {
 }
 
 function token(text: string, lead: Lead) {
-  const negocio = lead.tipoNegocio === "indefinido" ? "seu projeto" : lead.negocio || "seu negocio";
+  const negocio = lead.tipoNegocio === "indefinido" ? "seu projeto" : lead.negocio || "seu negócio";
   return text
-    .replaceAll("{nome}", lead.nome || "voce")
+    .replaceAll("{nome}", lead.nome || "você")
     .replaceAll("{negocio}", negocio)
     .replaceAll("{negocio_upper}", negocio.toUpperCase());
 }
@@ -81,7 +81,7 @@ function App() {
   }, [safeStep, step]);
 
   useEffect(() => {
-    if (!["questions", "processing", "result"].includes(screen)) return;
+    if (!["questions", "portfolio", "processing", "result"].includes(screen)) return;
     const session: SavedSession = { lead, step: safeStep, completed, savedAt: new Date().toISOString() };
     if (!saveSession(session)) setAnnouncement("Não foi possível salvar neste dispositivo. Para não perder as respostas, evite fechar a página.");
   }, [lead, safeStep, completed, screen]);
@@ -174,12 +174,23 @@ function App() {
   function next() {
     if (!current || !canContinue(current)) return;
     fireAnswerEvent(current);
+    if (current.id === "niche") {
+      setScreen("portfolio");
+      setAnnouncement("Projetos reais relacionados ao seu contexto.");
+      return;
+    }
     if (safeStep >= activeQuestions.length - 1) {
       setCompleted(true);
       setScreen("processing");
       return;
     }
     setStep((value) => value + 1);
+    setAnnouncement(`Etapa ${safeStep + 2} de ${activeQuestions.length}.`);
+  }
+
+  function continueFromPortfolio() {
+    setStep((value) => value + 1);
+    setScreen("questions");
     setAnnouncement(`Etapa ${safeStep + 2} de ${activeQuestions.length}.`);
   }
 
@@ -269,6 +280,14 @@ function App() {
           onBack={back}
           onSummary={() => setSummaryOpen(true)}
           summaryButtonRef={summaryButtonRef}
+        />
+      )}
+
+      {screen === "portfolio" && (
+        <PortfolioScreen
+          niche={lead.nicho}
+          onBack={() => setScreen("questions")}
+          onContinue={continueFromPortfolio}
         />
       )}
 
@@ -483,8 +502,8 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
 
         {question.id === "business" && selected === "empresa" && (
           <label className="field field--nested">
-            <span>Nome do negocio</span>
-            <input value={lead.negocio} placeholder="Ex.: Clinica Horizonte" onChange={(event) => onText("negocio", businessName(event.target.value))} />
+            <span>Nome do negócio</span>
+            <input value={lead.negocio} placeholder="Ex.: Clínica Horizonte" onChange={(event) => onText("negocio", businessName(event.target.value))} />
           </label>
         )}
 
@@ -493,7 +512,7 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
             <span>Conte um pouco mais</span>
             <textarea
               value={String(lead[selectedOption.requiresText] || "")}
-              placeholder="Uma frase ja e suficiente."
+              placeholder="Uma frase já é suficiente."
               onChange={(event) => onText(selectedOption.requiresText!, cleanText(event.target.value, 180) as never)}
             />
           </label>
@@ -504,10 +523,6 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
             <CheckCircle2 size={19} />
             <div><strong>{feedback.title}</strong><p>{token(feedback.body, lead)}</p></div>
           </div>
-        )}
-
-        {feedback && question.id === "niche" && (
-          <PortfolioMoment niche={lead.nicho} />
         )}
 
         <div className="stage-actions stage-actions--question">
@@ -521,31 +536,66 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
   );
 }
 
-function PortfolioMoment({ niche }: { niche: string }) {
-  const projects = getPortfolioForNiche(niche);
+function PortfolioScreen({ niche, onBack, onContinue }: {
+  niche: string;
+  onBack: () => void;
+  onContinue: () => void;
+}) {
+  const [category, setCategory] = useState("Todos");
+  const sortedProjects = getPortfolioForNiche(niche);
+  const visibleProjects = category === "Todos"
+    ? sortedProjects
+    : sortedProjects.filter((item) => item.category === category);
+
   return (
-    <aside className="context-moment" aria-labelledby="context-projects-title">
-      <div className="context-moment__heading">
+    <section className="portfolio-stage" aria-labelledby="portfolio-stage-title">
+      <header className="portfolio-stage__heading">
         <div>
-          <p className="section-label">ALGUNS CONTEXTOS QUE JÁ TRABALHEI</p>
-          <h2 id="context-projects-title">Projetos reais, não referências genéricas.</h2>
+          <p className="eyebrow">ANTES DE CONTINUARMOS</p>
+          <h1 id="portfolio-stage-title">Projetos reais em contextos diferentes.</h1>
+          <p>Separei primeiro os trabalhos mais próximos da área que você escolheu. Explore outros segmentos ou continue quando quiser.</p>
         </div>
-        <span>Arraste para ver mais</span>
+        <div className="portfolio-stage__count"><strong>{portfolioProjects.length}</strong><span>projetos no ar</span></div>
+      </header>
+
+      <div className="portfolio-filters" aria-label="Filtrar projetos por categoria">
+        {portfolioCategories.map((item) => (
+          <button
+            type="button"
+            className={category === item ? "is-active" : ""}
+            aria-pressed={category === item}
+            onClick={() => setCategory(item)}
+            key={item}
+          >
+            {item}
+          </button>
+        ))}
       </div>
-      <div className="portfolio-rail">
-        {projects.map((project) => <PortfolioMiniCard project={project} key={project.id} />)}
+
+      <div className="portfolio-stage__viewport">
+        <div className="portfolio-stage__grid">
+          {visibleProjects.map((project) => <PortfolioStageCard project={project} key={project.id} />)}
+        </div>
       </div>
-    </aside>
+
+      <footer className="portfolio-stage__actions">
+        <button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar à resposta</button>
+        <p>Você pode abrir qualquer projeto em uma nova aba.</p>
+        <button className="button button--primary" onClick={onContinue}>Continuar respondendo <ArrowRight size={18} /></button>
+      </footer>
+    </section>
   );
 }
 
-function PortfolioMiniCard({ project }: { project: PortfolioProject }) {
+function PortfolioStageCard({ project }: { project: PortfolioProject }) {
   return (
-    <a className="portfolio-mini" href={project.url} target="_blank" rel="noreferrer">
-      <div><img src={project.image} alt={`Projeto ${project.name}`} /></div>
-      <span>{project.category}</span>
-      <strong>{project.name}</strong>
-      <ArrowUpRight size={17} />
+    <a className="portfolio-stage-card" href={project.url} target="_blank" rel="noreferrer">
+      <div><img src={project.image} alt={`Página inicial do projeto ${project.name}`} loading="lazy" /></div>
+      <footer>
+        <span>{project.category}</span>
+        <strong>{project.name}</strong>
+        <ArrowUpRight size={18} />
+      </footer>
     </a>
   );
 }
@@ -745,7 +795,7 @@ function AnswerDrawer({ open, lead, questions: activeQuestions, onClose, onEdit,
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" ref={drawerRef}>
-        <header><div><p className="section-label">DIAGNOSTICO</p><h2 id="drawer-title">Minhas respostas</h2></div><button className="icon-button" onClick={onClose} aria-label="Fechar respostas"><X size={21} /></button></header>
+        <header><div><p className="section-label">DIAGNÓSTICO</p><h2 id="drawer-title">Minhas respostas</h2></div><button className="icon-button" onClick={onClose} aria-label="Fechar respostas"><X size={21} /></button></header>
         <div className="answer-list">
           {answered.map((question) => (
             <article key={question.id}>
@@ -755,7 +805,7 @@ function AnswerDrawer({ open, lead, questions: activeQuestions, onClose, onEdit,
           ))}
         </div>
         <button className="button button--danger-text" onClick={() => confirmRestart ? onRestart() : setConfirmRestart(true)}>
-          <RefreshCcw size={16} /> {confirmRestart ? "Confirmar reinicio" : "Recomecar analise"}
+          <RefreshCcw size={16} /> {confirmRestart ? "Confirmar reinício" : "Recomeçar análise"}
         </button>
       </div>
     </div>
@@ -764,7 +814,7 @@ function AnswerDrawer({ open, lead, questions: activeQuestions, onClose, onEdit,
 
 function answerFor(question: Question, lead: Lead) {
   if (question.id === "business") {
-    if (lead.tipoNegocio === "marca_pessoal") return "Uso meu proprio nome";
+    if (lead.tipoNegocio === "marca_pessoal") return "Uso meu próprio nome";
     if (lead.tipoNegocio === "indefinido") return "Projeto ainda sem nome";
     return lead.negocio;
   }
@@ -778,8 +828,8 @@ function answerFor(question: Question, lead: Lead) {
 
 function shortQuestion(question: Question) {
   const labels: Record<string, string> = {
-    name: "Nome", business: "Negocio", niche: "Area de atuacao", reach: "Alcance", situation: "Momento atual",
-    goal: "Objetivo", channel: "Canal principal", "sales-model": "Modelo de decisao", level: "Estrutura", budget: "Investimento", deadline: "Prazo"
+    name: "Nome", business: "Negócio", niche: "Área de atuação", reach: "Alcance", situation: "Momento atual",
+    goal: "Objetivo", channel: "Canal principal", "sales-model": "Modelo de decisão", level: "Estrutura", budget: "Investimento", deadline: "Prazo"
   };
   return labels[question.id] || question.title;
 }
