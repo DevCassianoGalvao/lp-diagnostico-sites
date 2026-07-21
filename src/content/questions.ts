@@ -85,7 +85,7 @@ export const questions: Question[] = [
     type: "single",
     visibleWhen: (lead) => ["saude", "juridico", "consultoria", "servico_local", "imobiliario", "educacao", "comercio"].includes(String(lead.nicho)),
     options: [
-      { id: "local", label: "Em uma cidade ou região próxima", ack: "Ótimo. Para negócios locais, aparecer no momento certo e transmitir confiança rapidamente faz diferença.", blockTitle: "Presença local que transforma pesquisa em contato.", tags: ["seo_local"] },
+      { id: "local", label: "Apenas em minha cidade", ack: "Ótimo. Para negócios locais, aparecer no momento certo e transmitir confiança rapidamente faz diferença.", blockTitle: "Presença local que transforma pesquisa em contato.", tags: ["seo_local"] },
       { id: "regional", label: "Em várias cidades da região", ack: "Entendi. Sua estrutura precisa comunicar cobertura sem parecer genérica.", blockTitle: "Uma presença regional com contexto local.", tags: ["seo_local"] },
       { id: "nacional", label: "Em todo o Brasil", ack: "Certo. Em atuação nacional, posicionamento e diferenciação precisam compensar a distância.", blockTitle: "Autoridade que não depende da localização.", tags: ["conteudo"] },
       { id: "online", label: "Atendimento 100% on-line", ack: "Perfeito. Nesse caso, o site é parte central da própria experiência de atendimento ou venda.", blockTitle: "Do primeiro acesso ao próximo passo, tudo precisa funcionar on-line.", tags: ["agendamento"] },
