@@ -14,5 +14,9 @@ export function firstName(value: string) {
 }
 
 export function businessName(value: string) {
-  return cleanText(value, 80);
+  return value
+    .replace(/[<>]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/^\s+/, "")
+    .slice(0, 80);
 }
