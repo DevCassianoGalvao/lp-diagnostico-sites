@@ -333,18 +333,21 @@ img { display: block; max-width: 100%; }
 .orientation .stage-actions { justify-content: flex-start; }
 
 .question-stage { justify-content: flex-start; padding-top: clamp(64px, 10vh, 112px); }
-.question-stage__meta { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 24px; margin-bottom: 40px; }
+.question-stage__meta { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 24px; margin-bottom: 40px; }
 .step-label { display: block; margin-bottom: 12px; color: var(--text-muted); }
 .progress-track { width: min(420px, 55vw); height: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.1); }
 .progress-track i { display: block; height: 100%; background: var(--green); transition: width 350ms ease; }
 
 .summary-trigger {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   border: 0;
-  padding: 4px;
-  background: transparent;
+  padding: 4px 8px;
+  background: var(--bg);
+  box-shadow: 0 0 0 8px var(--bg);
   color: var(--text-muted);
   font-weight: 500;
 }
