@@ -13,7 +13,7 @@ const project = (
   category: string,
   url: string,
   niches: string[]
-): PortfolioProject => ({ id, name, category, url, image: `/assets/portfolio/${id}.webp?v=3`, niches });
+): PortfolioProject => ({ id, name, category, url, image: `/portfolio-image/${id}?v=4`, niches });
 
 export const portfolioProjects: PortfolioProject[] = [
   project("congressis", "Congressis", "Eventos", "https://congressis.com.br", ["educacao"]),
