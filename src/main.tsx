@@ -336,6 +336,11 @@ function Welcome({ recovered, onStart, onResume }: {
   onStart: () => void;
   onResume: () => void;
 }) {
+  const coverProjectIds = ["congressis", "dr-andre", "wm-suplementos"];
+  const coverProjects = coverProjectIds
+    .map((id) => portfolioProjects.find((project) => project.id === id))
+    .filter((project): project is PortfolioProject => Boolean(project));
+
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -373,7 +378,7 @@ function Welcome({ recovered, onStart, onResume }: {
         <div className="hero-work" aria-label="Alguns projetos reais desenvolvidos por Cassiano">
           <div className="hero-work__signal"><ScanSearch size={17} /><span>PROJETOS REAIS</span><strong>+220</strong></div>
           <div className="hero-work__stack">
-            {portfolioProjects.slice(0, 3).map((project, index) => (
+            {coverProjects.map((project, index) => (
               <a className={`hero-project hero-project--${index + 1}`} href={project.url} target="_blank" rel="noreferrer" key={project.id}>
                 <img src={project.image} alt={`Projeto ${project.name}`} />
                 <span>{project.category}</span>
