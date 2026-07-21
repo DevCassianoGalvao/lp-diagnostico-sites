@@ -30,7 +30,7 @@ import { initialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
 import { track } from "./analytics/events";
 import { buildWhatsappUrl, DIRECT_WHATSAPP_URL, hasConfiguredWhatsapp } from "./services/whatsapp";
-import { businessName, cleanText, firstName } from "./utils/sanitize";
+import { businessName, cleanText, editableText, firstName } from "./utils/sanitize";
 import { isValidEmail, isValidWhatsapp } from "./utils/validators";
 import "./styles/global.css";
 
@@ -518,7 +518,7 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
             <textarea
               value={String(lead[selectedOption.requiresText] || "")}
               placeholder="Uma frase já é suficiente."
-              onChange={(event) => onText(selectedOption.requiresText!, cleanText(event.target.value, 180) as never)}
+              onChange={(event) => onText(selectedOption.requiresText!, editableText(event.target.value) as never)}
             />
           </label>
         )}

@@ -20,3 +20,11 @@ export function businessName(value: string) {
     .replace(/^\s+/, "")
     .slice(0, 80);
 }
+
+export function editableText(value: string, max = 180) {
+  return value
+    .replace(/[<>]/g, "")
+    .replace(/[^\S\r\n]+/g, " ")
+    .replace(/^ +/, "")
+    .slice(0, max);
+}
