@@ -31,22 +31,16 @@ export const portfolioProjects: PortfolioProject[] = [
   project("studio-milimetrica", "Studio Milimétrica", "Arquitetura", "https://studiomilimetrica.com.br", ["imobiliario", "servico_local"]),
   project("cmf-arts", "CMF Arts", "Empresas", "https://cmfarts.com.br", ["comercio", "outro"]),
   project("b2-branding", "B2 Branding", "Empresas", "https://b2branding.site", ["consultoria", "outro"]),
-  project("clube-fruta", "Clube da Fruta", "Empresas", "https://clubedafruta.com", ["comercio"]),
   project("thony", "Thony Desentupidora", "Serviços", "https://thonydesentupidoraltda.com.br", ["servico_local"]),
-  project("lord-balkon", "Lord Balkon", "Empresas", "https://lp.lordbalkon.com.br", ["servico_local", "imobiliario"]),
   project("dluk", "D'Luk Barbearia", "Serviços", "http://dlukbarbearia.com", ["servico_local", "estetica"]),
   project("recicle", "Recicle, Reutilize, Plante", "Empresas", "https://reciclereutilizeplante.com.br", ["comercio", "outro"]),
   project("mj-gesso", "MJ Gesso", "Empresas", "http://mjgesso.com.br", ["imobiliario", "servico_local"]),
   project("injeta-rj", "Injeta RJ", "Empresas", "https://injetarj.com.br", ["imobiliario", "servico_local"]),
-  project("beemote", "Beemote Motores", "Empresas", "https://beemotemotores.com.br", ["comercio", "outro"]),
-  project("automatique", "Automatique Chat", "Tecnologia", "https://automatiquechat.com.br", ["tecnologia"]),
   project("marina-borja", "Marina Borja", "Profissionais", "https://marinaborja.com.br/mentorialapidar", ["consultoria"]),
   project("gestor-weslen", "Gestor Weslen", "Profissionais", "https://gestorweslen.com.br", ["consultoria"]),
-  project("dutra-investir", "Dutra Investir", "Finanças", "https://dutrainvestireparatodos.com.br", ["consultoria"]),
   project("amanda-zanetti", "Amanda Zanetti", "Educação", "https://amandazanetti.com.br", ["educacao"]),
-  project("educacao-positiva", "Instituto Educação Positiva", "Educação", "https://educacaopositiva.net", ["educacao"]),
   project("amanda-pos", "Pós-graduação Amanda Zanetti", "Educação", "https://amandazanetti.com.br/pos-graduacao", ["educacao"]),
-  project("maicon", "Maicon Gonçalves", "Educação", "https://maicongoncalves.com.br", ["educacao"])
+  project("maicon", "Maicon Gonçalves", "Política", "https://maicongoncalves.com.br", ["outro"])
 ];
 
 export const portfolioCategories = [
