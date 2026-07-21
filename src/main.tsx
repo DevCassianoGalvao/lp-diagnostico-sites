@@ -568,7 +568,10 @@ function PortfolioScreen({ niche, onBack, onContinue }: {
       <header className="portfolio-stage__heading">
         <div>
           <p className="eyebrow">ANTES DE CONTINUARMOS</p>
-          <h1 id="portfolio-stage-title">Projetos reais em contextos diferentes.</h1>
+          <h1 id="portfolio-stage-title">
+            <span>Projetos reais em</span>
+            <span>contextos diferentes.</span>
+          </h1>
           <p>Separei primeiro os trabalhos mais próximos da área que você escolheu. Explore outros segmentos ou continue quando quiser.</p>
         </div>
         <div className="portfolio-stage__count"><strong>{portfolioProjects.length}</strong><span>projetos no ar</span></div>

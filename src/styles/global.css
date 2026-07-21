@@ -416,7 +416,8 @@ img { display: block; max-width: 100%; }
   padding: 34px 0 26px;
 }
 .portfolio-stage__heading { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 48px; }
-.portfolio-stage__heading h1 { max-width: 16ch; margin: 8px 0 10px; font-size: 42px; line-height: 1.05; }
+.portfolio-stage__heading h1 { margin: 8px 0 10px; font-size: 42px; line-height: 1.05; }
+.portfolio-stage__heading h1 span { display: block; white-space: nowrap; }
 .portfolio-stage__heading > div > p:last-child { max-width: 68ch; margin: 0; color: var(--text-soft); }
 .portfolio-stage__count { min-width: 124px; display: grid; padding: 8px 0 8px 24px; border-left: 1px solid rgba(0,239,158,.42); }
 .portfolio-stage__count strong { color: var(--green); font-size: 34px; line-height: 1; }
@@ -593,7 +594,7 @@ img { display: block; max-width: 100%; }
   .option { min-height: 54px; }
   .portfolio-stage { width: calc(100% - 40px); height: calc(100vh - 60px); min-height: 620px; gap: 14px; padding: 26px 0 18px; }
   .portfolio-stage__heading { grid-template-columns: 1fr; gap: 12px; }
-  .portfolio-stage__heading h1 { max-width: 15ch; margin-top: 6px; font-size: 34px; }
+  .portfolio-stage__heading h1 { margin-top: 6px; font-size: 34px; }
   .portfolio-stage__heading > div > p:last-child { font-size: 15px; line-height: 1.45; }
   .portfolio-stage__count { grid-template-columns: auto 1fr; align-items: baseline; gap: 8px; padding: 0; border-left: 0; }
   .portfolio-stage__count strong { font-size: 24px; }
