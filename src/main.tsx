@@ -230,7 +230,7 @@ function App() {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
     if (!isValidWhatsapp(lead.whatsapp)) nextErrors.whatsapp = "Confira o número e inclua o DDD.";
-    if (!isValidEmail(lead.email)) nextErrors.email = "Confira se o e-mail foi digitado por completo.";
+    if (!isValidEmail(cleanText(lead.email, 80))) nextErrors.email = "Confira se o e-mail foi digitado por completo.";
     if (!lead.consentimento) nextErrors.consentimento = "Autorize o envio do resumo para continuar.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
@@ -723,7 +723,7 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
               placeholder="(22) 99999-9999"
               aria-invalid={Boolean(errors.whatsapp)}
               aria-describedby={errors.whatsapp ? "whatsapp-error" : undefined}
-              onChange={(event) => onUpdate("whatsapp", cleanText(event.target.value, 20))}
+              onChange={(event) => onUpdate("whatsapp", editableText(event.target.value, 20))}
             />
             {errors.whatsapp && <small id="whatsapp-error" role="alert">{errors.whatsapp}</small>}
           </label>
@@ -736,7 +736,7 @@ function ResultPanel({ lead, result, errors, whatsappUrl, leadSent, onBack, onSu
               placeholder="voce@empresa.com.br"
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? "email-error" : undefined}
-              onChange={(event) => onUpdate("email", cleanText(event.target.value, 80))}
+              onChange={(event) => onUpdate("email", editableText(event.target.value, 80))}
             />
             {errors.email && <small id="email-error" role="alert">{errors.email}</small>}
           </label>

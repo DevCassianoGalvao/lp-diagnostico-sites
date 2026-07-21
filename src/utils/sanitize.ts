@@ -7,18 +7,14 @@ export function cleanText(value: string, max = 120) {
 }
 
 export function firstName(value: string) {
-  const clean = cleanText(value, 40).toLocaleLowerCase("pt-BR");
+  const clean = editableText(value, 40).toLocaleLowerCase("pt-BR");
   return clean.replace(/(^|[^\p{L}\p{M}])(\p{L})/gu, (_, separator: string, letter: string) => (
     separator + letter.toLocaleUpperCase("pt-BR")
   ));
 }
 
 export function businessName(value: string) {
-  return value
-    .replace(/[<>]/g, "")
-    .replace(/\s+/g, " ")
-    .replace(/^\s+/, "")
-    .slice(0, 80);
+  return editableText(value, 80);
 }
 
 export function editableText(value: string, max = 180) {
