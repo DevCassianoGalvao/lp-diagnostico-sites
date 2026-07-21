@@ -378,7 +378,6 @@ function Welcome({ recovered, onStart, onResume }: {
               </a>
             ))}
           </div>
-          <p>Uma amostra do trabalho. Outros projetos aparecem durante a análise, conforme o seu contexto.</p>
         </div>
       </section>
     </div>
