@@ -85,6 +85,7 @@ img { display: block; max-width: 100%; }
   width: min(calc(100% - 48px), 1180px);
   min-height: 72px;
   margin: 0 auto;
+  padding-top: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -519,7 +520,7 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 680px) {
-  .header { width: calc(100% - 40px); min-height: 60px; }
+  .header { width: calc(100% - 40px); min-height: 72px; padding-top: 12px; }
   .header .brand { width: 112px; }
   .ambient-line { left: 20px; opacity: 0.3; }
   .ambient-grid { background-size: 48px 48px; opacity: 0.3; }

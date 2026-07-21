@@ -28,5 +28,5 @@ export async function sendLeadNotification(payload: LeadNotificationPayload) {
   });
 
   if (!response.ok) throw new Error("lead_notification_failed");
-  return response.json() as Promise<{ ok: true; messageId: string }>;
+  return response.json() as Promise<{ ok: true; delivered: boolean; messageId?: string }>;
 }

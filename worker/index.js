@@ -38,7 +38,7 @@ async function handleLeadNotification(request, env, url) {
   if (contentLength > 50000) return json({ error: "payload_too_large" }, 413);
 
   if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL || !env.LEAD_NOTIFICATION_EMAIL) {
-    return json({ error: "email_not_configured" }, 503);
+    return json({ ok: true, delivered: false });
   }
 
   if (isRateLimited(request)) return json({ error: "too_many_requests" }, 429);
@@ -84,7 +84,7 @@ async function handleLeadNotification(request, env, url) {
   }
 
   const result = await response.json();
-  return json({ ok: true, messageId: result.messageId || "sent" });
+  return json({ ok: true, delivered: true, messageId: result.messageId || "sent" });
 }
 
 function normalizeLeadPayload(payload) {

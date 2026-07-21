@@ -104,7 +104,7 @@ function App() {
   const [notifications, setNotifications] = useState(recovered?.notifications || {});
   const [leadSaving, setLeadSaving] = useState(false);
   const [leadCaptureError, setLeadCaptureError] = useState("");
-  const [diagnosisEmailStatus, setDiagnosisEmailStatus] = useState<"idle" | "sending" | "sent" | "error">(
+  const [diagnosisEmailStatus, setDiagnosisEmailStatus] = useState<"idle" | "sending" | "sent" | "error" | "unavailable">(
     recovered?.notifications?.completedAt ? "sent" : "idle"
   );
   const [announcement, setAnnouncement] = useState("");
@@ -228,9 +228,11 @@ function App() {
       setLeadSaving(true);
       setLeadCaptureError("");
       try {
-        await sendLeadNotification(buildLeadNotification("started", lead, activeQuestions, result));
-        setNotifications((value) => ({ ...value, startedAt: new Date().toISOString() }));
-        track("lead_submit", { source: "first_step" });
+        const notification = await sendLeadNotification(buildLeadNotification("started", lead, activeQuestions, result));
+        if (notification.delivered) {
+          setNotifications((value) => ({ ...value, startedAt: new Date().toISOString() }));
+          track("lead_submit", { source: "first_step" });
+        }
       } catch {
         setLeadCaptureError("Não consegui registrar seu contato agora. Confira a conexão e tente novamente.");
         setLeadSaving(false);
@@ -282,7 +284,11 @@ function App() {
   async function sendCompletedDiagnosis() {
     setDiagnosisEmailStatus("sending");
     try {
-      await sendLeadNotification(buildLeadNotification("completed", lead, activeQuestions, result));
+      const notification = await sendLeadNotification(buildLeadNotification("completed", lead, activeQuestions, result));
+      if (!notification.delivered) {
+        setDiagnosisEmailStatus("unavailable");
+        return;
+      }
       setNotifications((value) => ({ ...value, completedAt: new Date().toISOString() }));
       setDiagnosisEmailStatus("sent");
       setAnnouncement("Seus dados e seu diagnóstico foram enviados com sucesso.");
@@ -753,7 +759,7 @@ function ResultPanel({ lead, result, whatsappUrl, emailStatus, onBack, onRetryEm
   lead: Lead;
   result: ReturnType<typeof getRecommendation>;
   whatsappUrl: string;
-  emailStatus: "idle" | "sending" | "sent" | "error";
+  emailStatus: "idle" | "sending" | "sent" | "error" | "unavailable";
   onBack: () => void;
   onRetryEmail: () => void | Promise<void>;
   onSummary: () => void;
@@ -822,7 +828,9 @@ function ResultPanel({ lead, result, whatsappUrl, emailStatus, onBack, onRetryEm
         <h2>{emailStatus === "sent" ? "Já tenho seus dados e seu diagnóstico." : "Seus dados e seu diagnóstico estão prontos."}</h2>
         <p>{emailStatus === "sent"
           ? "Entrarei em contato pelo WhatsApp para pedir algumas informações adicionais e entender melhor o projeto."
-          : "Estou enviando essas informações. Você também pode iniciar a conversa agora pelo WhatsApp."}</p>
+          : emailStatus === "sending"
+            ? "Estou enviando essas informações. Você também pode iniciar a conversa agora pelo WhatsApp."
+            : "Envie tudo pelo WhatsApp. Por lá, vou pedir algumas informações adicionais para entender melhor o projeto."}</p>
         {emailStatus === "sending" && <p className="email-status">Enviando diagnóstico...</p>}
         {emailStatus === "error" && (
           <div className="email-status email-status--error" role="alert">

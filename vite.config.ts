@@ -11,7 +11,7 @@ export default defineConfig({
           if (req.url === "/api/leads" && req.method === "POST") {
             res.statusCode = 200;
             res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ ok: true, messageId: "local-preview" }));
+            res.end(JSON.stringify({ ok: true, delivered: true, messageId: "local-preview" }));
             return;
           }
           const match = req.url?.match(/^\/portfolio-image\/([a-z0-9-]+)(?:\?.*)?$/);
