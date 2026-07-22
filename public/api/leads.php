@@ -107,9 +107,9 @@ function load_brevo_config(): array
     $config = [
         'api_key' => getenv('BREVO_API_KEY') ?: '',
         'sender_email' => getenv('BREVO_SENDER_EMAIL') ?: '',
-        'sender_name' => getenv('BREVO_SENDER_NAME') ?: 'Diagnostico Cassiano Galvao',
+        'sender_name' => getenv('BREVO_SENDER_NAME') ?: 'Diagnóstico Cassiano Galvão',
         'notification_email' => getenv('LEAD_NOTIFICATION_EMAIL') ?: '',
-        'notification_name' => getenv('LEAD_NOTIFICATION_NAME') ?: 'Cassiano Galvao',
+        'notification_name' => getenv('LEAD_NOTIFICATION_NAME') ?: 'Cassiano Galvão',
     ];
 
     $documentRoot = rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/\\');
@@ -199,8 +199,8 @@ function build_lead_email(array $lead): array
 {
     $complete = $lead['phase'] === 'completed';
     $subject = $complete
-        ? '[Diagnostico completo] ' . $lead['contact']['name']
-        : '[Novo lead] ' . $lead['contact']['name'] . ' iniciou o diagnostico';
+        ? 'Diagnóstico concluído: ' . $lead['contact']['name']
+        : 'Novo lead: ' . $lead['contact']['name'] . ' iniciou o diagnóstico';
 
     $answerRows = '';
     foreach ($lead['answers'] as $item) {
@@ -212,29 +212,29 @@ function build_lead_email(array $lead): array
     $diagnosisHtml = '';
     if ($lead['diagnosis'] !== null) {
         $diagnosis = $lead['diagnosis'];
-        $diagnosisHtml = '<h2 style="margin:28px 0 12px;font-size:20px;color:#151515">Diagnostico</h2>'
+        $diagnosisHtml = '<h2 style="margin:28px 0 12px;font-size:20px;color:#151515">Diagnóstico</h2>'
             . email_block('Leitura', $diagnosis['summary'])
             . email_block('Principal desafio', $diagnosis['challenge'])
             . email_block('Oportunidade', $diagnosis['opportunity'])
-            . email_block('Recomendacao', $diagnosis['recommendation'] . ' - ' . $diagnosis['recommendationBody']);
+            . email_block('Recomendação', $diagnosis['recommendation'] . ' - ' . $diagnosis['recommendationBody']);
         if ($diagnosis['modules']) {
-            $diagnosisHtml .= email_block('Apoios possiveis', implode('; ', $diagnosis['modules']));
+            $diagnosisHtml .= email_block('Apoios possíveis', implode('; ', $diagnosis['modules']));
         }
     }
 
     $whatsappUrl = whatsapp_contact_url($lead['contact']['whatsapp'], $lead['contact']['name']);
     $whatsappButton = $whatsappUrl !== ''
-        ? '<div style="margin:0 0 24px;padding:18px;background:#f1fff9;border:1px solid #b8f2d9">'
-            . '<p style="margin:0 0 12px;font-size:14px;color:#333">O contato abaixo abre o WhatsApp com uma mensagem personalizada para este lead.</p>'
-            . '<a href="' . html($whatsappUrl) . '" style="display:inline-block;padding:13px 18px;background:#00a884;color:#fff;text-decoration:none;font-size:15px;font-weight:700;border-radius:5px">Chamar ' . html($lead['contact']['name']) . ' no WhatsApp</a>'
+        ? '<div style="margin:0 0 24px;padding:0 0 22px;border-bottom:1px solid #e6e6e6">'
+            . '<p style="margin:0 0 10px;font-size:14px;color:#333">Conversa pronta com uma saudação personalizada para este lead.</p>'
+            . '<a href="' . html($whatsappUrl) . '" style="display:inline-block;padding:12px 16px;background:#00a884;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:4px">Abrir conversa com ' . html($lead['contact']['name']) . '</a>'
             . '</div>'
         : '';
 
-    $htmlContent = '<!doctype html><html><body style="margin:0;background:#f4f4f5;font-family:Arial,sans-serif;color:#151515">'
+    $htmlContent = '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;background:#f4f4f5;font-family:Arial,sans-serif;color:#151515">'
         . '<div style="max-width:720px;margin:0 auto;padding:28px 16px">'
         . '<div style="background:#08080b;border-top:4px solid #00ef9e;padding:24px;color:#fff">'
         . '<p style="margin:0 0 8px;color:#a954ff;font-size:12px;font-weight:700;text-transform:uppercase">'
-        . ($complete ? 'Diagnostico concluido' : 'Novo contato capturado') . '</p>'
+        . ($complete ? 'Diagnóstico concluído' : 'Novo contato capturado') . '</p>'
         . '<h1 style="margin:0;font-size:26px">' . html($lead['contact']['name']) . '</h1></div>'
         . '<div style="background:#fff;padding:24px">' . $whatsappButton . '<h2 style="margin:0 0 14px;font-size:20px">Contato</h2>'
         . email_block('WhatsApp', $lead['contact']['whatsapp'])
