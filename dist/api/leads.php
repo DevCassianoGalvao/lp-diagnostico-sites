@@ -88,7 +88,10 @@ $curlError = curl_error($curl);
 curl_close($curl);
 
 if ($brevoResponse === false || $status < 200 || $status >= 300) {
-    error_log('Brevo lead notification failed. HTTP ' . $status . ' ' . $curlError);
+    $responseSummary = is_string($brevoResponse)
+        ? substr((string) preg_replace('/\s+/', ' ', strip_tags($brevoResponse)), 0, 500)
+        : '';
+    error_log('Brevo lead notification failed. HTTP ' . $status . ' curl=' . $curlError . ' response=' . $responseSummary);
     json_response(['error' => 'email_delivery_failed'], 502);
 }
 
@@ -110,11 +113,20 @@ function load_brevo_config(): array
     ];
 
     $documentRoot = rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/\\');
-    $privateConfig = dirname($documentRoot) . '/.config/cassiano-lp-brevo.php';
-    if (is_file($privateConfig)) {
-        $fileConfig = require $privateConfig;
-        if (is_array($fileConfig)) {
-            $config = array_merge($config, array_intersect_key($fileConfig, $config));
+    $home = rtrim((string) (getenv('HOME') ?: ''), '/\\');
+    $privateConfigs = array_unique(array_filter([
+        $home !== '' ? $home . '/.config/cassiano-lp-brevo.php' : '',
+        $documentRoot !== '' ? dirname($documentRoot) . '/.config/cassiano-lp-brevo.php' : '',
+        dirname(__DIR__, 3) . '/.config/cassiano-lp-brevo.php',
+    ]));
+
+    foreach ($privateConfigs as $privateConfig) {
+        if (is_file($privateConfig)) {
+            $fileConfig = require $privateConfig;
+            if (is_array($fileConfig)) {
+                $config = array_merge($config, array_intersect_key($fileConfig, $config));
+            }
+            break;
         }
     }
 
@@ -210,13 +222,21 @@ function build_lead_email(array $lead): array
         }
     }
 
+    $whatsappUrl = whatsapp_contact_url($lead['contact']['whatsapp'], $lead['contact']['name']);
+    $whatsappButton = $whatsappUrl !== ''
+        ? '<div style="margin:0 0 24px;padding:18px;background:#f1fff9;border:1px solid #b8f2d9">'
+            . '<p style="margin:0 0 12px;font-size:14px;color:#333">O contato abaixo abre o WhatsApp com uma mensagem personalizada para este lead.</p>'
+            . '<a href="' . html($whatsappUrl) . '" style="display:inline-block;padding:13px 18px;background:#00a884;color:#fff;text-decoration:none;font-size:15px;font-weight:700;border-radius:5px">Chamar ' . html($lead['contact']['name']) . ' no WhatsApp</a>'
+            . '</div>'
+        : '';
+
     $htmlContent = '<!doctype html><html><body style="margin:0;background:#f4f4f5;font-family:Arial,sans-serif;color:#151515">'
         . '<div style="max-width:720px;margin:0 auto;padding:28px 16px">'
         . '<div style="background:#08080b;border-top:4px solid #00ef9e;padding:24px;color:#fff">'
         . '<p style="margin:0 0 8px;color:#a954ff;font-size:12px;font-weight:700;text-transform:uppercase">'
         . ($complete ? 'Diagnostico concluido' : 'Novo contato capturado') . '</p>'
         . '<h1 style="margin:0;font-size:26px">' . html($lead['contact']['name']) . '</h1></div>'
-        . '<div style="background:#fff;padding:24px"><h2 style="margin:0 0 14px;font-size:20px">Contato</h2>'
+        . '<div style="background:#fff;padding:24px">' . $whatsappButton . '<h2 style="margin:0 0 14px;font-size:20px">Contato</h2>'
         . email_block('WhatsApp', $lead['contact']['whatsapp'])
         . email_block('E-mail', $lead['contact']['email'])
         . email_block('ID do lead', $lead['leadId'])
@@ -224,6 +244,18 @@ function build_lead_email(array $lead): array
         . $diagnosisHtml . '</div></div></body></html>';
 
     return ['subject' => $subject, 'html' => $htmlContent];
+}
+
+function whatsapp_contact_url(string $phone, string $name): string
+{
+    $digits = (string) preg_replace('/\D/', '', $phone);
+    if (strlen($digits) === 10 || strlen($digits) === 11) {
+        $digits = '55' . $digits;
+    }
+    if (!preg_match('/^\d{12,14}$/', $digits)) return '';
+
+    $message = 'Olá, ' . $name . '! Aqui é o Cassiano Galvão. Recebi seu diagnóstico pelo meu site e gostaria de entender melhor o seu projeto. Podemos conversar?';
+    return 'https://wa.me/' . $digits . '?text=' . rawurlencode($message);
 }
 
 function rate_limited(string $ip): bool

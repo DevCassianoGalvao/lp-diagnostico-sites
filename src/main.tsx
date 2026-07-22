@@ -12,10 +12,8 @@ import {
   Edit3,
   Eye,
   Layers3,
-  MessageCircle,
   RefreshCcw,
   ScanSearch,
-  Send,
   Sparkles,
   X
 } from "lucide-react";
@@ -29,7 +27,7 @@ import { getRecommendation } from "./rules/recommendation-engine";
 import { createInitialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
 import { track } from "./analytics/events";
-import { buildWhatsappUrl, DIRECT_WHATSAPP_URL, hasConfiguredWhatsapp } from "./services/whatsapp";
+import { DIRECT_WHATSAPP_URL } from "./services/whatsapp";
 import { LeadNotificationPayload, sendLeadNotification } from "./services/lead-notifications";
 import { businessName, cleanText, editableText, firstName } from "./utils/sanitize";
 import { isValidEmail, isValidWhatsapp } from "./utils/validators";
@@ -231,10 +229,13 @@ function App() {
       setLeadCaptureError("");
       try {
         const notification = await sendLeadNotification(buildLeadNotification("started", lead, activeQuestions, result));
-        if (notification.delivered) {
-          setNotifications((value) => ({ ...value, startedAt: new Date().toISOString() }));
-          track("lead_submit", { source: "first_step" });
+        if (!notification.delivered) {
+          setLeadCaptureError("Não consegui registrar seu contato agora. Tente novamente em alguns instantes.");
+          setLeadSaving(false);
+          return;
         }
+        setNotifications((value) => ({ ...value, startedAt: new Date().toISOString() }));
+        track("lead_submit", { source: "first_step" });
       } catch {
         setLeadCaptureError("Não consegui registrar seu contato agora. Confira a conexão e tente novamente.");
         setLeadSaving(false);
@@ -289,6 +290,7 @@ function App() {
       const notification = await sendLeadNotification(buildLeadNotification("completed", lead, activeQuestions, result));
       if (!notification.delivered) {
         setDiagnosisEmailStatus("unavailable");
+        setAnnouncement("Não foi possível enviar o diagnóstico por e-mail. Tente novamente.");
         return;
       }
       setNotifications((value) => ({ ...value, completedAt: new Date().toISOString() }));
@@ -296,7 +298,7 @@ function App() {
       setAnnouncement("Seus dados e seu diagnóstico foram enviados com sucesso.");
     } catch {
       setDiagnosisEmailStatus("error");
-      setAnnouncement("Não foi possível enviar o diagnóstico por e-mail. Você ainda pode continuar pelo WhatsApp.");
+      setAnnouncement("Não foi possível enviar o diagnóstico por e-mail. Tente novamente.");
     }
   }
 
@@ -310,8 +312,6 @@ function App() {
     setAnnouncement("Resposta aberta para edição. A leitura será atualizada com a nova informação.");
     track("edit_answer", { field: questionId });
   }
-
-  const whatsappUrl = buildWhatsappUrl(lead, result);
 
   return (
     <main className={`app app--${screen}`}>
@@ -370,7 +370,6 @@ function App() {
         <ResultPanel
           lead={lead}
           result={result}
-          whatsappUrl={whatsappUrl}
           emailStatus={diagnosisEmailStatus}
           onBack={back}
           onRetryEmail={sendCompletedDiagnosis}
@@ -757,10 +756,9 @@ function Processing({ onDone }: { onDone: () => void }) {
   );
 }
 
-function ResultPanel({ lead, result, whatsappUrl, emailStatus, onBack, onRetryEmail, onSummary, summaryButtonRef }: {
+function ResultPanel({ lead, result, emailStatus, onBack, onRetryEmail, onSummary, summaryButtonRef }: {
   lead: Lead;
   result: ReturnType<typeof getRecommendation>;
-  whatsappUrl: string;
   emailStatus: "idle" | "sending" | "sent" | "error" | "unavailable";
   onBack: () => void;
   onRetryEmail: () => void | Promise<void>;
@@ -827,28 +825,22 @@ function ResultPanel({ lead, result, whatsappUrl, emailStatus, onBack, onRetryEm
 
       <section className="next-step" data-result>
         <p className="section-label">PRÓXIMO PASSO</p>
-        <h2>{emailStatus === "sent" ? "Já tenho seus dados e seu diagnóstico." : "Seus dados e seu diagnóstico estão prontos."}</h2>
+        <h2>Seus dados e seu diagnóstico estão prontos.</h2>
         <p>{emailStatus === "sent"
-          ? "Entrarei em contato pelo WhatsApp para pedir algumas informações adicionais e entender melhor o projeto."
+          ? "Recebi suas informações. Entrarei em contato pelo WhatsApp informado para pedir mais alguns detalhes sobre o projeto."
           : emailStatus === "sending"
-            ? "Estou enviando essas informações. Você também pode iniciar a conversa agora pelo WhatsApp."
-            : "Envie tudo pelo WhatsApp. Por lá, vou pedir algumas informações adicionais para entender melhor o projeto."}</p>
+            ? "Estou enviando suas informações. Assim que receber o diagnóstico, entrarei em contato pelo WhatsApp informado."
+            : "Vou receber essas informações por e-mail e entrar em contato pelo WhatsApp informado."}</p>
         {emailStatus === "sending" && <p className="email-status">Enviando diagnóstico...</p>}
-        {emailStatus === "error" && (
+        {emailStatus === "sent" && <p className="email-status">Dados enviados. Agora é comigo.</p>}
+        {(emailStatus === "error" || emailStatus === "unavailable") && (
           <div className="email-status email-status--error" role="alert">
-            <span>O envio por e-mail falhou. Tente novamente ou continue pelo WhatsApp.</span>
+            <span>Não consegui concluir o envio da notificação. Tente novamente para garantir que eu receba seus dados.</span>
             <button type="button" className="button button--secondary" onClick={onRetryEmail}>Tentar novamente</button>
           </div>
         )}
         <div className="final-contact-actions">
           <button type="button" className="button button--secondary" onClick={onBack}><ArrowLeft size={17} /> Revisar</button>
-          {hasConfiguredWhatsapp ? (
-            <a className="button button--whatsapp" href={whatsappUrl} target="_blank" rel="noreferrer" onClick={() => track("whatsapp_click", { cta_contexto: result.recommendation.id })}>
-              <Send size={18} /> Enviar pelo WhatsApp
-            </a>
-          ) : (
-            <button className="button button--whatsapp" disabled><MessageCircle size={18} /> WhatsApp indisponível</button>
-          )}
         </div>
       </section>
     </section>
