@@ -253,15 +253,21 @@ function build_lead_email(array $lead): array
     $contactActions = '';
     if ($whatsappUrl !== '' || $instagramUrl !== '') {
         $contactActions = '<div style="margin:0 0 24px;padding:0 0 22px;border-bottom:1px solid #e6e6e6">'
-            . '<p style="margin:0 0 10px;font-size:14px;color:#333">Atalhos para entrar em contato e conhecer o perfil deste lead.</p>';
+            . '<p style="margin:0 0 10px;font-size:14px;color:#333">Atalhos para entrar em contato e conhecer o perfil deste lead.</p>'
+            . '<table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>';
         if ($whatsappUrl !== '') {
-            $contactActions .= '<a href="' . html($whatsappUrl) . '" style="display:inline-block;margin:0 8px 8px 0;padding:12px 16px;background:#00a884;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:4px">Abrir WhatsApp</a>';
+            $contactActions .= '<td style="padding:0 8px 8px 0;vertical-align:top">'
+                . '<a href="' . html($whatsappUrl) . '" style="display:block;padding:12px 16px;background:#00a884;color:#fff;text-decoration:none;font-size:14px;font-weight:700;line-height:18px;border-radius:4px;white-space:nowrap">'
+                . '<img src="https://cassianogalvao.com.br/lp/assets/icons/whatsapp.svg" width="17" height="17" alt="" style="display:inline-block;margin:0 7px 0 0;border:0;vertical-align:middle">'
+                . '<span style="vertical-align:middle">Abrir WhatsApp</span></a></td>';
         }
         if ($instagramUrl !== '') {
-            $contactActions .= '<a href="' . html($instagramUrl) . '" style="display:inline-block;margin:0 0 8px;padding:12px 16px;background:#c13584;background-image:linear-gradient(90deg,#833ab4,#c13584,#e1306c);color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:4px">'
-                . '<img src="https://cassianogalvao.com.br/lp/assets/icons/instagram.svg" width="17" height="17" alt="" style="display:inline-block;margin:0 7px -4px 0;border:0">Abrir Instagram</a>';
+            $contactActions .= '<td style="padding:0 0 8px;vertical-align:top">'
+                . '<a href="' . html($instagramUrl) . '" style="display:block;padding:12px 16px;background:#c13584;background-image:linear-gradient(90deg,#833ab4,#c13584,#e1306c);color:#fff;text-decoration:none;font-size:14px;font-weight:700;line-height:18px;border-radius:4px;white-space:nowrap">'
+                . '<img src="https://cassianogalvao.com.br/lp/assets/icons/instagram.svg" width="17" height="17" alt="" style="display:inline-block;margin:0 7px 0 0;border:0;vertical-align:middle">'
+                . '<span style="vertical-align:middle">Abrir Instagram</span></a></td>';
         }
-        $contactActions .= '</div>';
+        $contactActions .= '</tr></table></div>';
     }
 
     $htmlContent = '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;background:#f4f4f5;font-family:Arial,sans-serif;color:#151515">'
