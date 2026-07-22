@@ -277,11 +277,11 @@ function App() {
     track("edit_answer", { field: current?.id });
   }
 
-  function finishProcessing() {
-    setScreen("result");
+  async function finishProcessing() {
     track("recommendation_view", { recommendation: result.recommendation.id });
     track("qualified_lead", { recommendation: result.recommendation.id, modules: result.moduleKeys });
-    if (!notifications.completedAt) void sendCompletedDiagnosis();
+    if (!notifications.completedAt) await sendCompletedDiagnosis();
+    setScreen("result");
   }
 
   async function sendCompletedDiagnosis() {
@@ -736,15 +736,20 @@ function PortfolioStageCard({ project }: { project: PortfolioProject }) {
 
 function Processing({ onDone }: { onDone: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const onDoneRef = useRef(onDone);
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const timer = window.setTimeout(onDone, reduced ? 80 : 1250);
+    const timer = window.setTimeout(() => onDoneRef.current(), reduced ? 80 : 1250);
     if (!reduced && ref.current) {
       gsap.fromTo(ref.current.querySelectorAll("i"), { scale: 0.72, autoAlpha: 0.2 }, { scale: 1, autoAlpha: 1, duration: 0.4, stagger: 0.2, ease: "power2.out" });
     }
     return () => window.clearTimeout(timer);
-  }, [onDone]);
+  }, []);
 
   return (
     <section className="processing stage" aria-live="polite">

@@ -36,7 +36,7 @@ if ($lead['website'] !== '') {
     json_response(['ok' => true, 'delivered' => false]);
 }
 
-if (rate_limited($_SERVER['REMOTE_ADDR'] ?? 'unknown')) {
+if (rate_limited(client_ip(), $lead['leadId'], $lead['phase'])) {
     json_response(['error' => 'too_many_requests'], 429);
 }
 
@@ -258,9 +258,21 @@ function whatsapp_contact_url(string $phone, string $name): string
     return 'https://wa.me/' . $digits . '?text=' . rawurlencode($message);
 }
 
-function rate_limited(string $ip): bool
+function client_ip(): string
 {
-    $file = sys_get_temp_dir() . '/cassiano-lp-' . hash('sha256', $ip) . '.json';
+    $candidates = [
+        $_SERVER['HTTP_CF_CONNECTING_IP'] ?? '',
+        $_SERVER['REMOTE_ADDR'] ?? '',
+    ];
+    foreach ($candidates as $candidate) {
+        if (filter_var($candidate, FILTER_VALIDATE_IP)) return $candidate;
+    }
+    return 'unknown';
+}
+
+function rate_limited(string $ip, string $leadId, string $phase): bool
+{
+    $file = sys_get_temp_dir() . '/cassiano-lp-' . hash('sha256', $ip . '|' . $leadId . '|' . $phase) . '.json';
     $now = time();
     $handle = fopen($file, 'c+');
     if ($handle === false) return false;
@@ -278,7 +290,7 @@ function rate_limited(string $ip): bool
     fflush($handle);
     flock($handle, LOCK_UN);
     fclose($handle);
-    return count($times) > 8;
+    return count($times) > 5;
 }
 
 function email_block(string $label, string $value): string
