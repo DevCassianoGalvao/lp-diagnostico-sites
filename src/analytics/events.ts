@@ -31,6 +31,7 @@ export const analyticsEvents = [
   "recommendation_view",
   "contact_form_view",
   "lead_submit",
+  "offer_gift_reveal",
   "whatsapp_click",
   "restart_diagnosis",
   "edit_answer"

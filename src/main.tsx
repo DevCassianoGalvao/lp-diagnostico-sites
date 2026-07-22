@@ -11,6 +11,7 @@ import {
   Code2,
   Edit3,
   Eye,
+  Gift,
   Layers3,
   MessageCircle,
   RefreshCcw,
@@ -90,7 +91,7 @@ function buildLeadNotification(
       recommendationBody: result.recommendation.body,
       modules: result.moduleKeys.map((key) => modules[key].title),
       indicators: Object.values(result.indicators),
-      offer: "Site Profissional Essencial por R$ 497, com seis meses de hospedagem grátis. Funcionalidades adicionais podem alterar o valor após a conversa de definição do projeto."
+      offer: "Site Profissional Essencial por R$ 497, com prazo de criação de 7 dias úteis após o recebimento dos materiais necessários e seis meses de hospedagem grátis. Funcionalidades adicionais podem alterar o valor após a conversa de definição do projeto."
     };
   }
 
@@ -847,6 +848,8 @@ function ResultPanel({ lead, result, emailStatus, onRetryEmail, onSummary, onPor
   summaryButtonRef: React.MutableRefObject<HTMLButtonElement | null>;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
+  const giftRef = useRef<HTMLDivElement>(null);
+  const [giftOpen, setGiftOpen] = useState(false);
   const copy = getResultCopy(lead, result);
 
   useEffect(() => {
@@ -855,6 +858,11 @@ function ResultPanel({ lead, result, emailStatus, onRetryEmail, onSummary, onPor
     const nodes = sectionRef.current.querySelectorAll("[data-result]");
     if (nodes.length) gsap.fromTo(nodes, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.08, ease: "power2.out" });
   }, []);
+
+  useEffect(() => {
+    if (!giftOpen || !giftRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    gsap.fromTo(giftRef.current, { autoAlpha: 0, y: 14, scale: 0.98 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.4)" });
+  }, [giftOpen]);
 
   return (
     <section className="result" ref={sectionRef} aria-labelledby="result-title">
@@ -899,8 +907,34 @@ function ResultPanel({ lead, result, emailStatus, onRetryEmail, onSummary, onPor
       <section className="offer-block" data-result>
         <div><p className="section-label">UMA FORMA DE COMEÇAR</p><h2>Site Profissional Essencial <span>por R$ 497</span></h2><p>Uma estrutura profissional em uma página completa para apresentar sua empresa, explicar seus serviços, transmitir confiança e facilitar novos contatos.</p></div>
         <ul>
-          <li>Planejamento da estrutura</li><li>Criação e organização dos textos</li><li>Layout personalizado</li><li>Desenvolvimento responsivo</li><li>Integração com WhatsApp</li><li>Configurações essenciais de SEO</li><li>Publicação</li><li>6 meses de hospedagem grátis</li>
+          <li>Planejamento da estrutura</li><li>Criação e organização dos textos</li><li>Layout personalizado</li><li>Desenvolvimento responsivo</li><li>Integração com WhatsApp</li><li>Configurações essenciais de SEO</li><li>Publicação</li><li>Prazo de criação: 7 dias úteis após o envio dos materiais</li>
         </ul>
+        {!giftOpen ? (
+          <button
+            type="button"
+            className="offer-gift-trigger"
+            aria-expanded="false"
+            aria-controls="offer-gift-reveal"
+            onClick={() => {
+              setGiftOpen(true);
+              track("offer_gift_reveal", { offer: "site_497" });
+            }}
+          >
+            <span className="offer-gift-trigger__icon" aria-hidden="true"><Gift size={23} /></span>
+            <span><small>Tenho um presente para você</small><strong>Clique aqui e abra agora</strong></span>
+            <ArrowRight size={19} aria-hidden="true" />
+          </button>
+        ) : (
+          <div className="offer-gift-reveal" id="offer-gift-reveal" ref={giftRef} role="status">
+            <span className="offer-gift-reveal__icon" aria-hidden="true"><Gift size={28} /></span>
+            <div>
+              <p className="section-label">PRESENTE DESBLOQUEADO</p>
+              <h3>6 meses de hospedagem grátis</h3>
+              <p>Ao adquirir seu site, você recebe a hospedagem dos primeiros seis meses sem custo.</p>
+            </div>
+            <strong>Economia de R$ 300</strong>
+          </div>
+        )}
         <p className="offer-block__note">O valor pode aumentar conforme as funcionalidades que precisarem ser desenvolvidas. O escopo e o valor final serão definidos em uma conversa sobre o projeto.</p>
       </section>
 

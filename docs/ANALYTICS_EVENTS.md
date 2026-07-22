@@ -27,6 +27,7 @@ Eventos tipados em `src/analytics/events.ts`. Nenhum evento envia nome, telefone
 | `diagnosis_complete` | Todas as respostas concluídas |
 | `recommendation_view` | Resultado exibido |
 | `lead_submit` | Diagnóstico final enviado |
+| `offer_gift_reveal` | Presente de hospedagem revelado na oferta |
 | `whatsapp_click` | CTA do WhatsApp clicado, com `source` |
 | `portfolio_full_view` | Portfólio completo aberto após resultado |
 | `restart_diagnosis` | Diagnóstico reiniciado |

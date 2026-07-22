@@ -2,7 +2,7 @@
 
 Diagnóstico conversacional para captar e qualificar interessados em sites profissionais.
 
-O fluxo usa captura progressiva, leitura sobre Google, prova de portfólio relacionada ao nicho e resultado com oferta do Site Profissional Essencial por R$ 497. Funcionalidades adicionais podem alterar o orçamento após a conversa de definição do projeto.
+O fluxo usa captura progressiva, leitura sobre Google, prova de portfólio relacionada ao nicho e resultado com oferta do Site Profissional Essencial por R$ 497, prazo de criação de 7 dias úteis após o recebimento dos materiais e presente de seis meses de hospedagem. Funcionalidades adicionais podem alterar o orçamento após a conversa de definição do projeto.
 
 ## Como instalar
 
