@@ -1,5 +1,11 @@
 Options -Indexes
 
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(?:src|docs|config|node_modules|public)(?:/|$) - [R=404,L,NC]
+  RewriteRule ^(?:package(?:-lock)?\.json|tsconfig.*\.json|vite\.config\.ts|README\.md|\.cpanel\.yml)$ - [R=404,L,NC]
+</IfModule>
+
 <IfModule mod_mime.c>
   AddType image/webp .webp
 </IfModule>

@@ -64,7 +64,7 @@ Verificacao importante: nenhuma jornada deve recomendar e-commerce, carrinho, ch
 
 ## Publicacao no cPanel
 
-O site e publicado em `https://cassianogalvao.com.br/lp/`. O build fica em `dist/`, unica pasta copiada para `public_html/lp` pela configuracao `.cpanel.yml`.
+O site e publicado em `https://cassianogalvao.com.br/lp/`. O build fica em `dist/`, unica pasta copiada para `$HOME/cassianogalvao.com.br/lp/` pela configuracao `.cpanel.yml`.
 
 Fluxo de publicacao:
 
