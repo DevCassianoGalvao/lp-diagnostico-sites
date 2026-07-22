@@ -59,14 +59,16 @@ $brevoPayload = [
         'name' => $config['notification_name'],
         'email' => $config['notification_email'],
     ]],
-    'replyTo' => [
-        'name' => $lead['contact']['name'],
-        'email' => $lead['contact']['email'],
-    ],
     'subject' => $email['subject'],
     'htmlContent' => $email['html'],
     'tags' => ['diagnostico-site', $lead['phase']],
 ];
+if ($lead['contact']['email'] !== '') {
+    $brevoPayload['replyTo'] = [
+        'name' => $lead['contact']['name'],
+        'email' => $lead['contact']['email'],
+    ];
+}
 
 $curl = curl_init('https://api.brevo.com/v3/smtp/email');
 curl_setopt_array($curl, [
@@ -138,7 +140,7 @@ function load_brevo_config(): array
 function normalize_lead(array $payload): array
 {
     $errors = [];
-    $phase = in_array($payload['phase'] ?? '', ['started', 'completed'], true) ? $payload['phase'] : '';
+    $phase = ($payload['phase'] ?? '') === 'completed' ? 'completed' : '';
     $leadId = clean_text($payload['leadId'] ?? '', 80);
     $contactPayload = is_array($payload['contact'] ?? null) ? $payload['contact'] : [];
     $contact = [
@@ -153,7 +155,7 @@ function normalize_lead(array $payload): array
     if (!preg_match('/^[a-zA-Z0-9-]{8,80}$/', $leadId)) $errors[] = 'leadId';
     if (text_length($contact['name']) < 2) $errors[] = 'name';
     if (!preg_match('/^\d{10,14}$/', preg_replace('/\D/', '', $contact['whatsapp']))) $errors[] = 'whatsapp';
-    if (!filter_var($contact['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'email';
+    if ($contact['email'] !== '' && !filter_var($contact['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'email';
     if (!$contact['consent']) $errors[] = 'consent';
 
     $answers = [];
@@ -180,7 +182,19 @@ function normalize_lead(array $payload): array
             'recommendation' => clean_text($source['recommendation'] ?? '', 240),
             'recommendationBody' => clean_text($source['recommendationBody'] ?? '', 1400),
             'modules' => $modules,
+            'indicators' => array_values(array_filter(array_map(static function ($value): string {
+                return clean_text($value, 180);
+            }, array_slice(is_array($source['indicators'] ?? null) ? $source['indicators'] : [], 0, 6)))),
+            'offer' => clean_text($source['offer'] ?? '', 500),
         ];
+    }
+
+    $campaign = [];
+    $allowedCampaign = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'];
+    $campaignSource = is_array($payload['campaign'] ?? null) ? $payload['campaign'] : [];
+    foreach ($allowedCampaign as $key) {
+        $value = clean_text($campaignSource[$key] ?? '', 240);
+        if ($value !== '') $campaign[$key] = $value;
     }
 
     if ($phase === 'completed' && ($diagnosis === null || !$answers)) $errors[] = 'diagnosis';
@@ -192,16 +206,15 @@ function normalize_lead(array $payload): array
         'contact' => $contact,
         'answers' => $answers,
         'diagnosis' => $diagnosis,
+        'campaign' => $campaign,
+        'timestamp' => clean_text($payload['timestamp'] ?? '', 60),
         'website' => clean_text($payload['website'] ?? '', 120),
     ];
 }
 
 function build_lead_email(array $lead): array
 {
-    $complete = $lead['phase'] === 'completed';
-    $subject = $complete
-        ? 'Diagnóstico concluído: ' . $lead['contact']['name']
-        : 'Novo lead: ' . $lead['contact']['name'] . ' iniciou o diagnóstico';
+    $subject = 'Diagnóstico concluído: ' . $lead['contact']['name'];
 
     $answerRows = '';
     foreach ($lead['answers'] as $item) {
@@ -221,6 +234,18 @@ function build_lead_email(array $lead): array
         if ($diagnosis['modules']) {
             $diagnosisHtml .= email_block('Apoios possíveis', implode('; ', $diagnosis['modules']));
         }
+        if ($diagnosis['indicators']) {
+            $diagnosisHtml .= email_block('Indicadores qualitativos', implode('; ', $diagnosis['indicators']));
+        }
+        if ($diagnosis['offer'] !== '') {
+            $diagnosisHtml .= email_block('Oferta apresentada', $diagnosis['offer']);
+        }
+    }
+
+    $campaignHtml = '';
+    if ($lead['campaign']) {
+        $campaignHtml = '<h2 style="margin:28px 0 12px;font-size:20px">Origem da campanha</h2>';
+        foreach ($lead['campaign'] as $key => $value) $campaignHtml .= email_block(strtoupper(str_replace('_', ' ', $key)), $value);
     }
 
     $whatsappUrl = whatsapp_contact_url($lead['contact']['whatsapp'], $lead['contact']['name']);
@@ -243,15 +268,15 @@ function build_lead_email(array $lead): array
         . '<div style="max-width:720px;margin:0 auto;padding:28px 16px">'
         . '<div style="background:#08080b;border-top:4px solid #00ef9e;padding:24px;color:#fff">'
         . '<p style="margin:0 0 8px;color:#a954ff;font-size:12px;font-weight:700;text-transform:uppercase">'
-        . ($complete ? 'Diagnóstico concluído' : 'Novo contato capturado') . '</p>'
+        . 'Diagnóstico concluído</p>'
         . '<h1 style="margin:0;font-size:26px">' . html($lead['contact']['name']) . '</h1></div>'
         . '<div style="background:#fff;padding:24px">' . $contactActions . '<h2 style="margin:0 0 14px;font-size:20px">Contato</h2>'
         . email_block('WhatsApp', $lead['contact']['whatsapp'])
-        . email_block('E-mail', $lead['contact']['email'])
+        . ($lead['contact']['email'] !== '' ? email_block('E-mail', $lead['contact']['email']) : '')
         . ($lead['contact']['instagram'] !== '' ? email_block('Instagram', '@' . $lead['contact']['instagram']) : '')
         . email_block('ID do lead', $lead['leadId'])
         . ($answerRows !== '' ? '<h2 style="margin:28px 0 12px;font-size:20px">Respostas</h2><table style="width:100%;border-collapse:collapse">' . $answerRows . '</table>' : '')
-        . $diagnosisHtml . '</div></div></body></html>';
+        . $diagnosisHtml . $campaignHtml . '</div></div></body></html>';
 
     return ['subject' => $subject, 'html' => $htmlContent];
 }

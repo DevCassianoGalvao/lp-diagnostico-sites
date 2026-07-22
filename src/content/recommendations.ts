@@ -10,7 +10,7 @@ export type Recommendation = {
 export const recommendations: Record<string, Recommendation> = {
   landing: {
     id: "landing",
-    title: "Landing Page de Conversão",
+    title: "Site profissional focado em contatos",
     headline: "Uma página dedicada a uma oferta e a um próximo passo.",
     body: "Pode fazer sentido quando a pessoa chega com um interesse específico. A mensagem precisa continuar o que trouxe o visitante, esclarecer a oferta e facilitar a ação esperada.",
     structure: ["Contexto da oferta", "Problema", "Proposta", "Benefícios", "Provas reais", "Dúvidas", "Responsividade", "Formulário ou WhatsApp"],
@@ -18,7 +18,7 @@ export const recommendations: Record<string, Recommendation> = {
   },
   institucional: {
     id: "institucional",
-    title: "Site Institucional Estratégico",
+    title: "Site profissional com páginas internas",
     headline: "Uma presença completa para organizar o negócio e facilitar o contato.",
     body: "Pode reunir posicionamento, serviços, provas e informações de contato sem transformar tudo em uma página genérica. O tamanho final depende do que o público precisa compreender.",
     structure: ["Página inicial", "Sobre", "Serviços", "Detalhes dos serviços", "Projetos reais", "Conteúdo", "Responsividade", "Contato", "Políticas"],
@@ -26,7 +26,7 @@ export const recommendations: Record<string, Recommendation> = {
   },
   autoridade: {
     id: "autoridade",
-    title: "Site de Autoridade e Conteúdo",
+    title: "Site profissional para fortalecer autoridade",
     headline: "Uma estrutura para tornar experiência, método e especialidade mais compreensíveis.",
     body: "A confiança pode ser construída com apresentação clara, histórico verificável, conteúdo útil e provas reais, sem depender de afirmações grandiosas.",
     structure: ["Posicionamento", "Perfil", "Método", "Especialidades", "Projetos reais", "Artigos", "Responsividade", "Dúvidas", "Contato"],
@@ -34,7 +34,7 @@ export const recommendations: Record<string, Recommendation> = {
   },
   orcamento: {
     id: "orcamento",
-    title: "Site de Serviços com Orçamento Orientado",
+    title: "Site profissional para pedidos de orçamento",
     headline: "Mais contexto antes da solicitação de orçamento.",
     body: "A estrutura pode apresentar os serviços e coletar informações que ajudam a preparar o atendimento. Os campos e a integração precisam acompanhar o processo comercial real.",
     structure: ["Serviços", "Áreas atendidas", "Provas reais", "Perguntas de contexto", "Responsividade", "Confirmação", "Organização dos contatos"],
@@ -42,7 +42,7 @@ export const recommendations: Record<string, Recommendation> = {
   },
   agendamento: {
     id: "agendamento",
-    title: "Site com Agendamento ou Pré-atendimento",
+    title: "Site profissional com agendamento ou pré-atendimento",
     headline: "Informação antes da agenda e organização depois do contato.",
     body: "Pode responder dúvidas, apresentar modalidades e preparar o agendamento. Regras, disponibilidade e eventuais integrações precisam ser confirmadas antes de definir a solução.",
     structure: ["Serviços", "Profissional ou equipe", "Dúvidas", "Pré-atendimento", "Responsividade", "Agenda", "Confirmação", "Contato"],
@@ -50,7 +50,7 @@ export const recommendations: Record<string, Recommendation> = {
   },
   catalogo: {
     id: "catalogo",
-    title: "Site-vitrine e Catálogo de Produtos",
+    title: "Site profissional com catálogo",
     headline: "Uma vitrine organizada para facilitar a descoberta e preparar o pedido.",
     body: "Produtos, categorias e informações importantes podem ficar acessíveis antes do atendimento. A proposta não inclui loja virtual, checkout ou pagamento on-line nesta etapa.",
     structure: ["Página inicial", "Categorias", "Detalhes dos produtos", "Busca ou filtros", "Diferenciais", "Responsividade", "Formulário", "WhatsApp com contexto"],
@@ -58,7 +58,7 @@ export const recommendations: Record<string, Recommendation> = {
   },
   lancamento: {
     id: "lancamento",
-    title: "Página de Lançamento, Evento ou Inscrição",
+    title: "Site para lançamento, evento ou inscrição",
     headline: "Uma oferta organizada para uma decisão com contexto e prazo real.",
     body: "A página pode apresentar proposta, público, programa, responsáveis, provas e condições. Urgência só deve aparecer quando houver uma data ou limite verdadeiro.",
     structure: ["Apresentação", "Para quem é", "Benefícios", "Programa", "Responsáveis", "Provas reais", "Responsividade", "Dúvidas", "Formulário de inscrição"],
@@ -66,7 +66,7 @@ export const recommendations: Record<string, Recommendation> = {
   },
   redesign: {
     id: "redesign",
-    title: "Redesign e Otimização",
+    title: "Atualização de site profissional",
     headline: "Revisar o que existe antes de decidir o que deve mudar.",
     body: "O trabalho pode começar com uma auditoria de mensagem, navegação, celular, velocidade, provas, chamadas para ação e mensuração. Nem tudo precisa necessariamente ser refeito.",
     structure: ["Auditoria", "Arquitetura", "Texto", "Redesign", "Desenvolvimento", "Responsividade", "Migração", "Testes", "Mensuração"],
@@ -74,24 +74,24 @@ export const recommendations: Record<string, Recommendation> = {
   },
   funil: {
     id: "funil",
-    title: "Site com Fluxo de Captação",
+    title: "Site profissional com formulário inteligente",
     headline: "Uma estrutura para receber contatos com contexto e organizar a continuidade.",
     body: "Além das páginas, o fluxo pode registrar respostas e preparar o atendimento. Classificação, avisos e integrações só devem entrar quando ajudarem o processo real.",
-    structure: ["Site ou landing page", "Formulários", "Responsividade", "Organização dos contatos", "Marcadores", "Notificações", "Integrações", "Mensuração", "Exportação"],
+    structure: ["Site profissional", "Formulários", "Responsividade", "Organização dos contatos", "Marcadores", "Notificações", "Integrações", "Mensuração", "Exportação"],
     cta: "Quero organizar a chegada dos contatos"
   },
   mvp: {
     id: "mvp",
-    title: "Primeira Estrutura Essencial",
+    title: "Site Profissional Essencial",
     headline: "Uma base profissional limitada ao que precisa funcionar agora.",
     body: "A primeira versão pode apresentar a oferta principal, explicar por que confiar e facilitar o contato. O escopo deve permitir evolução sem fingir que todas as necessidades já foram resolvidas.",
-    structure: ["Apresentação", "Oferta", "Benefícios", "Prova real", "Processo", "Responsividade", "Dúvidas", "Contato", "Mensuração básica"],
+    structure: ["Apresentação", "Serviços", "Benefícios", "Prova real", "Processo", "Responsividade", "WhatsApp", "SEO essencial", "Publicação"],
     cta: "Quero definir uma primeira etapa"
   }
 };
 
 export const modules = {
-  seo_local: { title: "Ser encontrado na região", body: "Organizar serviços, localização e contato pode fortalecer a presença do negócio nas pesquisas locais." },
+  seo_local: { title: "Fortalecer a presença nas pesquisas", body: "Organizar serviços, localização e contato cria uma base mais clara para mecanismos de busca e clientes." },
   mensuracao: { title: "Entender o caminho dos contatos", body: "Registrar as etapas principais ajuda a identificar onde as pessoas avançam ou encontram dificuldade." },
   crm: { title: "Receber solicitações com mais contexto", body: "Os contatos podem chegar com informações que ajudam a preparar o atendimento e reduzem perguntas repetidas." },
   autoridade: { title: "Construir confiança antes do contato", body: "Experiência, método e provas reais podem ajudar o visitante a compreender o trabalho." },

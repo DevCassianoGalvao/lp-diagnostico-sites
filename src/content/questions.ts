@@ -1,4 +1,5 @@
 import { LeadKey } from "../state/lead-state";
+import { availableNiches } from "./portfolio";
 
 export type QuestionOption = {
   id: string;
@@ -15,7 +16,7 @@ export type Question = {
   field: LeadKey;
   title: string;
   help?: string;
-  type: "text" | "email" | "tel" | "single" | "consent";
+  type: "text" | "email" | "tel" | "single" | "consent" | "contact";
   placeholder?: string;
   options?: QuestionOption[];
   optional?: boolean;
@@ -27,7 +28,7 @@ export const questions: Question[] = [
     id: "name",
     field: "nome",
     title: "Antes de começar, como posso te chamar?",
-    help: "Deixe também seu WhatsApp e e-mail para eu não perder seu contato enquanto preparo o diagnóstico.",
+    help: "Vou usar seu primeiro nome para personalizar alguns pontos da análise.",
     type: "text",
     placeholder: "Digite seu primeiro nome"
   },
@@ -75,7 +76,7 @@ export const questions: Question[] = [
       { id: "comercio", label: "Comércio, lojas físicas e marcas", ack: "Entendi. Produtos precisam ficar fáceis de conhecer, sem depender de uma loja virtual completa.", blockTitle: "Uma vitrine clara ajuda o cliente a escolher e entrar em contato.", blockBody: "A estrutura pode apresentar linhas, categorias, diferenciais, localização e formas de pedido por contato.", tags: ["catalogo"] },
       { id: "tecnologia", label: "Tecnologia e software", ack: "Perfeito. Produtos digitais precisam explicar algo complexo sem parecer complicados.", blockTitle: "Clareza reduz a distância entre tecnologia e valor.", blockBody: "O site deve mostrar problema resolvido, funcionamento, casos de uso e próximo passo adequado ao estágio do cliente.", tags: ["b2b", "demo"] },
       { id: "outro", label: "Outro", ack: "Seu segmento não precisa caber em uma caixa. Vou considerar sua descrição ao montar a recomendação.", requiresText: "nichoOutro", tags: ["nicho_outro"] }
-    ]
+    ].filter((option) => availableNiches.some((niche) => niche.id === option.id)) as QuestionOption[]
   },
   {
     id: "reach",
@@ -83,7 +84,6 @@ export const questions: Question[] = [
     title: "Onde está a maior parte das pessoas que você atende?",
     help: "Isso ajuda a entender se localização, alcance ou atendimento on-line precisam influenciar a estrutura.",
     type: "single",
-    visibleWhen: (lead) => ["saude", "juridico", "consultoria", "servico_local", "imobiliario", "educacao", "comercio"].includes(String(lead.nicho)),
     options: [
       { id: "local", label: "Apenas em minha cidade", ack: "Ótimo. Para negócios locais, aparecer no momento certo e transmitir confiança rapidamente faz diferença.", blockTitle: "Presença local que transforma pesquisa em contato.", tags: ["seo_local"] },
       { id: "regional", label: "Em várias cidades da região", ack: "Entendi. Sua estrutura precisa comunicar cobertura sem parecer genérica.", blockTitle: "Uma presença regional com contexto local.", tags: ["seo_local"] },
@@ -91,6 +91,15 @@ export const questions: Question[] = [
       { id: "online", label: "Atendimento 100% on-line", ack: "Perfeito. Nesse caso, o site é parte central da própria experiência de atendimento ou venda.", blockTitle: "Do primeiro acesso ao próximo passo, tudo precisa funcionar on-line.", tags: ["agendamento"] },
       { id: "hibrido", label: "Local e on-line", ack: "Boa. Vamos equilibrar a confiança da presença local com a escala do atendimento on-line.", blockTitle: "Próximo para quem está perto e acessível para quem está longe.", tags: ["seo_local", "agendamento"] }
     ]
+  },
+  {
+    id: "city",
+    field: "cidade",
+    title: "Qual é a principal cidade ou região onde você atende?",
+    help: "Essa informação ajuda a personalizar a leitura sobre pesquisas locais.",
+    type: "text",
+    placeholder: "Ex.: Nova Friburgo e região",
+    visibleWhen: (lead) => ["local", "regional", "hibrido"].includes(String(lead.alcance))
   },
   {
     id: "situation",
@@ -110,6 +119,13 @@ export const questions: Question[] = [
     ]
   },
   {
+    id: "contact",
+    field: "whatsapp",
+    title: "Onde posso salvar e enviar sua recomendação?",
+    help: "Já entendi o contexto inicial do seu negócio. Deixe seu WhatsApp para eu registrar o diagnóstico e continuar a análise sem perder suas respostas.",
+    type: "contact"
+  },
+  {
     id: "goal",
     field: "objetivo",
     title: "O que você mais gostaria de melhorar na sua presença digital?",
@@ -125,6 +141,20 @@ export const questions: Question[] = [
       { id: "inscricoes", label: "Captar inscrições para curso ou evento", ack: "Entendi. A página precisa transformar interesse em decisão dentro de uma data e condições específicas.", blockTitle: "Programa claro, confiança e urgência legítima.", tags: ["lancamento"] },
       { id: "organizar_comercial", label: "Organizar meu processo comercial", ack: "Ótimo. O site pode ser a porta de entrada de um processo mais organizado.", blockTitle: "O lead chega com contexto e a conversa começa mais bem preparada.", tags: ["crm"] },
       { id: "outro", label: "Outro objetivo", ack: "Entendi. Essa será a prioridade da recomendação, mesmo que a solução combine mais de uma estrutura.", requiresText: "objetivoOutro" }
+    ]
+  },
+  {
+    id: "google-visibility",
+    field: "visibilidadeGoogle",
+    title: "Quando alguém procura pelo seu serviço no Google, o que costuma acontecer?",
+    help: "Não precisa ter certeza técnica. Escolha a opção mais próxima do que você percebe hoje.",
+    type: "single",
+    options: [
+      { id: "encontra_site", label: "Encontra minha empresa e meu site", ack: "Sua empresa já possui uma base. Agora vale melhorar clareza, conteúdo e o caminho até o contato." },
+      { id: "encontra_perfil", label: "Encontra meu perfil, mas eu não tenho um site", ack: "O perfil ajuda na descoberta. Um site pode aprofundar as informações e fortalecer a decisão." },
+      { id: "informacoes_incompletas", label: "Minha empresa aparece, mas as informações estão incompletas", ack: "Organizar serviços, região e contato pode tornar sua presença mais útil para quem pesquisa." },
+      { id: "concorrentes", label: "Meus concorrentes aparecem com mais destaque", ack: "Existe uma oportunidade de construir uma base própria, clara e preparada para pesquisas." },
+      { id: "nao_sei", label: "Nunca conferi ou não sei dizer", ack: "Tudo bem. Verificar como sua empresa aparece será um bom primeiro passo." }
     ]
   },
   {
@@ -160,31 +190,16 @@ export const questions: Question[] = [
     ]
   },
   {
-    id: "level",
-    field: "nivel",
-    title: "O que você espera desta primeira etapa?",
-    help: "A recomendação pode separar o que é essencial agora do que pode ser desenvolvido depois.",
+    id: "project-path",
+    field: "caminhoProjeto",
+    title: "Qual caminho parece mais próximo do que sua empresa precisa agora?",
+    help: "O diagnóstico vai separar a solução inicial do que pode ser desenvolvido em uma segunda etapa.",
     type: "single",
     options: [
-      { id: "essencial", label: "Uma base essencial para começar", ack: "Boa. Vamos priorizar clareza, credibilidade e um próximo passo principal.", tags: ["mvp"] },
-      { id: "personalizada", label: "Uma solução profissional e personalizada", ack: "Perfeito. Estratégia, copy, design e desenvolvimento precisam trabalhar como um sistema.", tags: ["premium"] },
-      { id: "completa", label: "Estrutura de captação e organização", ack: "Entendi. Além do site, vamos considerar rastreamento, qualificação, integrações e continuidade comercial.", tags: ["crm", "automacao"] },
-      { id: "orientacao", label: "Ainda não sei e quero orientação", ack: "Essa é justamente a função da análise: separar o necessário agora do que pode vir depois.", tags: ["orientacao"] }
-    ]
-  },
-  {
-    id: "budget",
-    field: "investimento",
-    title: "Opcional: você já definiu uma faixa para esta primeira etapa?",
-    help: "Essa informação serve apenas para organizar prioridades. Você pode continuar sem responder.",
-    type: "single",
-    optional: true,
-    options: [
-      { id: "ate_1500", label: "Até R$ 1.500", ack: "Vou priorizar uma primeira etapa enxuta e mostrar o que pode evoluir depois." },
-      { id: "1500_3000", label: "De R$ 1.500 a R$ 3.000", ack: "Essa faixa permite avaliar uma estrutura profissional com foco bem definido." },
-      { id: "3000_6000", label: "De R$ 3.000 a R$ 6.000", ack: "Já podemos considerar uma solução mais completa e personalizada." },
-      { id: "6000_plus", label: "Acima de R$ 6.000", ack: "Vou considerar uma estrutura mais completa, com etapas e possibilidade de evolução." },
-      { id: "indefinido", label: "Ainda não defini", ack: "Sem problema. A recomendação vai separar essencial, recomendado e segunda fase." }
+      { id: "site_497", label: "Quero começar com um site profissional de R$ 497", ack: "Ótimo. Vou priorizar uma estrutura essencial, profissional e pronta para evoluir." },
+      { id: "mais_paginas", label: "Preciso de uma estrutura com mais páginas", ack: "Entendi. A recomendação vai considerar uma apresentação mais ampla do negócio." },
+      { id: "recursos_integracoes", label: "Preciso de recursos ou integrações adicionais", ack: "Certo. Vou separar o site principal dos recursos que precisam ser confirmados em uma conversa." },
+      { id: "orientacao", label: "Ainda não sei e quero orientação", ack: "Sem problema. Esta análise vai separar o essencial do que pode vir depois." }
     ]
   },
   {

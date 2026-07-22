@@ -12,6 +12,7 @@ import {
   Edit3,
   Eye,
   Layers3,
+  MessageCircle,
   RefreshCcw,
   ScanSearch,
   Sparkles,
@@ -27,13 +28,13 @@ import { getRecommendation } from "./rules/recommendation-engine";
 import { createInitialLead, Lead, LeadKey } from "./state/lead-state";
 import { clearSession, loadSession, saveSession, SavedSession } from "./state/persistence";
 import { track } from "./analytics/events";
-import { DIRECT_WHATSAPP_URL } from "./services/whatsapp";
-import { LeadNotificationPayload, sendLeadNotification } from "./services/lead-notifications";
+import { buildCapturedWhatsappUrl, buildWhatsappUrl } from "./services/whatsapp";
+import { getCampaignContext, LeadNotificationPayload, sendLeadNotification } from "./services/lead-notifications";
 import { businessName, cleanText, editableText, firstName } from "./utils/sanitize";
 import { formatWhatsapp, isValidEmail, isValidWhatsapp } from "./utils/validators";
 import "./styles/global.css";
 
-type Screen = "welcome" | "orientation" | "questions" | "portfolio" | "processing" | "result";
+type Screen = "welcome" | "orientation" | "questions" | "education" | "portfolio-preview" | "portfolio" | "processing" | "result";
 
 const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
@@ -70,14 +71,16 @@ function buildLeadNotification(
       email: lead.email,
       instagram: lead.instagram,
       consent: lead.consentimento
-    }
+    },
+    answers: activeQuestions
+      .map((question) => ({ question: shortQuestion(question), answer: answerFor(question, lead) }))
+      .filter((item) => item.answer),
+    campaign: getCampaignContext(),
+    timestamp: new Date().toISOString()
   };
 
   if (phase === "completed") {
     const copy = getResultCopy(lead, result);
-    payload.answers = activeQuestions
-      .map((question) => ({ question: shortQuestion(question), answer: answerFor(question, lead) }))
-      .filter((item) => item.answer);
     payload.diagnosis = {
       title: copy.title,
       summary: copy.understood,
@@ -85,7 +88,9 @@ function buildLeadNotification(
       opportunity: copy.opportunity,
       recommendation: result.recommendation.title,
       recommendationBody: result.recommendation.body,
-      modules: result.moduleKeys.map((key) => modules[key].title)
+      modules: result.moduleKeys.map((key) => modules[key].title),
+      indicators: Object.values(result.indicators),
+      offer: "Site Profissional Essencial por R$ 497, com seis meses de hospedagem grátis. Funcionalidades adicionais podem alterar o valor após a conversa de definição do projeto."
     };
   }
 
@@ -103,8 +108,6 @@ function App() {
   const [completed, setCompleted] = useState(Boolean(recovered?.completed));
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [notifications, setNotifications] = useState(recovered?.notifications || {});
-  const [leadSaving, setLeadSaving] = useState(false);
-  const [leadCaptureError, setLeadCaptureError] = useState("");
   const [diagnosisEmailStatus, setDiagnosisEmailStatus] = useState<"idle" | "sending" | "sent" | "error" | "unavailable">(
     recovered?.notifications?.completedAt ? "sent" : "idle"
   );
@@ -126,8 +129,12 @@ function App() {
   }, [safeStep, step]);
 
   useEffect(() => {
-    if (!["questions", "portfolio", "processing", "result"].includes(screen)) return;
-    const session: SavedSession = { lead, step: safeStep, completed, notifications, savedAt: new Date().toISOString() };
+    if (screen === "questions" && current?.id === "contact") track("contact_form_view", { step: safeStep + 1 });
+  }, [current?.id, safeStep, screen]);
+
+  useEffect(() => {
+    if (!["questions", "education", "portfolio-preview", "portfolio", "processing", "result"].includes(screen)) return;
+    const session: SavedSession = { lead, step: safeStep, completed, screen, notifications, savedAt: new Date().toISOString() };
     if (!saveSession(session)) setAnnouncement("Não foi possível salvar neste dispositivo. Para não perder as respostas, evite fechar a página.");
   }, [lead, safeStep, completed, notifications, screen]);
 
@@ -138,14 +145,15 @@ function App() {
     setStep(0);
     setCompleted(false);
     setNotifications({});
-    setLeadCaptureError("");
     setDiagnosisEmailStatus("idle");
     setScreen("orientation");
     track("start_diagnosis");
   }
 
   function resume() {
-    setScreen(recovered?.completed ? "result" : "questions");
+    const resumable: Screen[] = ["questions", "education", "portfolio-preview", "processing", "result"];
+    const savedScreen = recovered?.screen as Screen | undefined;
+    setScreen(savedScreen && resumable.includes(savedScreen) ? savedScreen : recovered?.completed ? "result" : "questions");
     if (recovered?.completed) track("recommendation_view", { recommendation: result.recommendation.id });
   }
 
@@ -161,7 +169,6 @@ function App() {
     setStep(0);
     setCompleted(false);
     setNotifications({});
-    setLeadCaptureError("");
     setDiagnosisEmailStatus("idle");
     setSummaryOpen(false);
     setAnnouncement("Análise reiniciada.");
@@ -206,9 +213,10 @@ function App() {
   function canContinue(question: Question | undefined) {
     if (!question || question.optional) return true;
     if (question.id === "name") {
-      return cleanText(lead.nome).length >= 2
-        && isValidWhatsapp(lead.whatsapp)
-        && Boolean(cleanText(lead.email, 80))
+      return cleanText(lead.nome).length >= 2;
+    }
+    if (question.id === "contact") {
+      return isValidWhatsapp(lead.whatsapp)
         && isValidEmail(cleanText(lead.email, 80))
         && lead.consentimento;
     }
@@ -225,43 +233,17 @@ function App() {
 
   async function next() {
     if (!current || !canContinue(current)) return;
-    if (current.id === "name" && !notifications.startedAt) {
-      setLeadSaving(true);
-      setLeadCaptureError("");
-      try {
-        const notification = await sendLeadNotification(buildLeadNotification("started", lead, activeQuestions, result));
-        if (!notification.delivered) {
-          setLeadCaptureError("Não consegui registrar seu contato agora. Tente novamente em alguns instantes.");
-          setLeadSaving(false);
-          return;
-        }
-        setNotifications((value) => ({ ...value, startedAt: new Date().toISOString() }));
-        track("lead_submit", { source: "first_step" });
-      } catch {
-        setLeadCaptureError("Não consegui registrar seu contato agora. Confira a conexão e tente novamente.");
-        setLeadSaving(false);
-        return;
-      }
-      setLeadSaving(false);
+    if (current.id === "contact" && !notifications.startedAt) {
+      setNotifications((value) => ({ ...value, startedAt: new Date().toISOString() }));
+      track("contact_captured", { source: "progressive_capture" });
     }
-    fireAnswerEvent(current);
-    if (current.id === "niche") {
-      setScreen("portfolio");
-      setAnnouncement("Projetos reais relacionados ao seu contexto.");
-      return;
-    }
+    fireAnswerEvent(current, lead);
     if (safeStep >= activeQuestions.length - 1) {
-      setCompleted(true);
-      setScreen("processing");
+      setScreen("education");
+      track("google_education_view");
       return;
     }
     setStep((value) => value + 1);
-    setAnnouncement(`Etapa ${safeStep + 2} de ${activeQuestions.length}.`);
-  }
-
-  function continueFromPortfolio() {
-    setStep((value) => value + 1);
-    setScreen("questions");
     setAnnouncement(`Etapa ${safeStep + 2} de ${activeQuestions.length}.`);
   }
 
@@ -279,8 +261,10 @@ function App() {
   }
 
   async function finishProcessing() {
+    setCompleted(true);
+    track("diagnosis_complete", { recommendation: result.recommendation.id });
     track("recommendation_view", { recommendation: result.recommendation.id });
-    track("qualified_lead", { recommendation: result.recommendation.id, modules: result.moduleKeys });
+    track("lead_submit", { recommendation: result.recommendation.id });
     if (!notifications.completedAt) await sendCompletedDiagnosis();
     setScreen("result");
   }
@@ -318,16 +302,19 @@ function App() {
     <main className={`app app--${screen}`}>
       <Ambient />
       <Header compact={screen !== "welcome"} />
+      {notifications.startedAt && (
       <a
         className="floating-whatsapp"
-        href={DIRECT_WHATSAPP_URL}
+        aria-label="Prefere conversar agora pelo WhatsApp?"
+        href={screen === "result" ? buildWhatsappUrl(lead, result) : buildCapturedWhatsappUrl(lead)}
         target="_blank"
         rel="noreferrer"
         onClick={() => track("whatsapp_click", { source: "floating_button" })}
       >
-        <img src={assetUrl("assets/icons/whatsapp.svg")} alt="" aria-hidden="true" />
-        Ir logo para WhatsApp
+        <MessageCircle size={21} aria-hidden="true" />
+        <span>Prefere conversar agora?</span>
       </a>
+      )}
       <p className="sr-only" aria-live="polite">{announcement}</p>
 
       {screen === "welcome" && (
@@ -346,8 +333,6 @@ function App() {
           total={activeQuestions.length}
           progress={progress}
           canContinue={canContinue(current)}
-          saving={leadSaving}
-          captureError={leadCaptureError}
           onText={update}
           onOption={(option) => applyOption(current, option)}
           onNext={next}
@@ -359,9 +344,23 @@ function App() {
 
       {screen === "portfolio" && (
         <PortfolioScreen
+          onBack={() => setScreen("result")}
+        />
+      )}
+
+      {screen === "education" && (
+        <VisibilityEducation
+          lead={lead}
+          onBack={() => { setCompleted(false); setScreen("questions"); setStep(Math.max(activeQuestions.length - 1, 0)); }}
+          onContinue={() => { setScreen("portfolio-preview"); track("portfolio_preview_view", { niche: lead.nicho }); }}
+        />
+      )}
+
+      {screen === "portfolio-preview" && (
+        <PortfolioPreview
           niche={lead.nicho}
-          onBack={() => setScreen("questions")}
-          onContinue={continueFromPortfolio}
+          onBack={() => setScreen("education")}
+          onContinue={() => setScreen("processing")}
         />
       )}
 
@@ -372,9 +371,9 @@ function App() {
           lead={lead}
           result={result}
           emailStatus={diagnosisEmailStatus}
-          onBack={back}
           onRetryEmail={sendCompletedDiagnosis}
           onSummary={() => setSummaryOpen(true)}
+          onPortfolio={() => { setScreen("portfolio"); track("portfolio_full_view"); }}
           summaryButtonRef={summaryButtonRef}
         />
       )}
@@ -408,6 +407,7 @@ function Welcome({ recovered, onStart, onResume }: {
   onResume: () => void;
 }) {
   const heroCarouselRef = useRef<HTMLDivElement>(null);
+  const welcomeRef = useRef<HTMLElement>(null);
   const coverProjectIds = ["congressis", "dr-andre", "wm-suplementos"];
   const coverProjects = coverProjectIds
     .map((id) => portfolioProjects.find((project) => project.id === id))
@@ -422,15 +422,15 @@ function Welcome({ recovered, onStart, onResume }: {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    gsap.fromTo(".welcome__copy > *", { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.62, stagger: 0.08, ease: "power2.out" });
-    gsap.fromTo(".hero-visual__node", { autoAlpha: 0, scale: 0.76 }, { autoAlpha: 1, scale: 1, duration: 0.55, stagger: 0.12, delay: 0.25, ease: "back.out(1.6)" });
-
-    gsap.fromTo(".hero-project", { autoAlpha: 0, x: 24, rotate: 1.5 }, { autoAlpha: 1, x: 0, rotate: 0, duration: 0.62, stagger: 0.1, delay: 0.2, ease: "power2.out" });
+    const welcome = welcomeRef.current;
+    if (!welcome) return;
+    gsap.fromTo(welcome.querySelectorAll(".welcome__copy > *"), { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.62, stagger: 0.08, ease: "power2.out" });
+    gsap.fromTo(welcome.querySelectorAll(".hero-project"), { autoAlpha: 0, x: 24, rotate: 1.5 }, { autoAlpha: 1, x: 0, rotate: 0, duration: 0.62, stagger: 0.1, delay: 0.2, ease: "power2.out" });
   }, []);
 
   return (
     <div className="welcome-page">
-      <section className="welcome welcome--visitor" id="inicio" aria-labelledby="welcome-title">
+      <section ref={welcomeRef} className="welcome welcome--visitor" id="inicio" aria-labelledby="welcome-title">
         <div className="welcome__copy">
           <p className="eyebrow">DIAGNÓSTICO DIGITAL EM 2 MINUTOS</p>
           <h1 id="welcome-title">O que o seu negócio precisa construir agora?</h1>
@@ -503,15 +503,13 @@ function Orientation({ onBack, onStart }: { onBack: () => void; onStart: () => v
   );
 }
 
-function QuestionScreen({ question, lead, step, total, progress, canContinue, saving, captureError, onText, onOption, onNext, onBack, onSummary, summaryButtonRef }: {
+function QuestionScreen({ question, lead, step, total, progress, canContinue, onText, onOption, onNext, onBack, onSummary, summaryButtonRef }: {
   question: Question;
   lead: Lead;
   step: number;
   total: number;
   progress: number;
   canContinue: boolean;
-  saving: boolean;
-  captureError: string;
   onText: <K extends LeadKey>(key: K, value: Lead[K]) => void;
   onOption: (option: QuestionOption) => void;
   onNext: () => void | Promise<void>;
@@ -527,7 +525,8 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, sa
   useEffect(() => {
     titleRef.current?.focus();
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    gsap.fromTo(".question-stage__content", { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.38, ease: "power2.out" });
+    const content = titleRef.current?.closest(".question-stage__content");
+    if (content) gsap.fromTo(content, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.38, ease: "power2.out" });
   }, [question.id]);
 
   return (
@@ -558,16 +557,16 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, sa
               autoFocus
               value={String(lead[question.field] || "")}
               placeholder={question.placeholder}
-              onChange={(event) => onText(question.field, firstName(event.target.value) as never)}
+              onChange={(event) => onText(question.field, editableText(event.target.value, 120) as never)}
               onKeyDown={(event) => { if (event.key === "Enter" && canContinue) onNext(); }}
             />
           </label>
         )}
 
         {question.id === "name" && (
-          <div className="lead-capture">
-            <label className="field lead-capture__name">
-              <span>Seu nome</span>
+          <div className="lead-capture lead-capture--name">
+            <label className="field">
+              <span className="sr-only">Seu primeiro nome</span>
               <input
                 autoFocus
                 value={lead.nome}
@@ -576,6 +575,11 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, sa
                 onChange={(event) => onText("nome", firstName(event.target.value))}
               />
             </label>
+          </div>
+        )}
+
+        {question.id === "contact" && (
+          <div className="lead-capture lead-capture--contact">
             <label className="field">
               <span>WhatsApp</span>
               <input
@@ -590,7 +594,7 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, sa
               {lead.whatsapp && !isValidWhatsapp(lead.whatsapp) && <small>Inclua o DDD e confira o número.</small>}
             </label>
             <label className="field">
-              <span>E-mail</span>
+              <span>E-mail <i>opcional</i></span>
               <input
                 value={lead.email}
                 inputMode="email"
@@ -669,37 +673,97 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, sa
 
         <div className="stage-actions stage-actions--question">
           <button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar</button>
-          <button className="button button--primary" disabled={!canContinue || saving} onClick={onNext}>
-            {saving ? "Registrando contato..." : "Continuar"} {!saving && <ArrowRight size={18} />}
+          <button className="button button--primary" disabled={!canContinue} onClick={onNext}>
+            Continuar <ArrowRight size={18} />
           </button>
         </div>
-        {captureError && question.id === "name" && <p className="capture-error" role="alert">{captureError}</p>}
       </div>
     </section>
   );
 }
 
-function PortfolioScreen({ niche, onBack, onContinue }: {
-  niche: string;
-  onBack: () => void;
-  onContinue: () => void;
-}) {
+function VisibilityEducation({ lead, onBack, onContinue }: { lead: Lead; onBack: () => void; onContinue: () => void }) {
+  const business = lead.tipoNegocio === "indefinido" ? "seu projeto" : lead.negocio || "seu negócio";
+  return (
+    <section className="education-stage stage" aria-labelledby="education-title">
+      <p className="eyebrow">ANTES DA SUA RECOMENDAÇÃO</p>
+      <h1 id="education-title">Um site bonito não basta. Ele também precisa ser encontrado e compreendido.</h1>
+      <p className="education-stage__lead">Quando alguém procura pelo seu serviço, mecanismos de busca precisam entender quem é sua empresa, o que ela oferece, onde atende e como o cliente pode entrar em contato.</p>
+      <div className="education-pillars">
+        <article><ScanSearch size={22} /><h2>Conteúdo estratégico</h2><p>Serviços, dúvidas, diferenciais e região de atendimento precisam aparecer em textos claros e relacionados ao que o público procura.</p></article>
+        <article><Code2 size={22} /><h2>Estrutura técnica</h2><p>Títulos, descrições, hierarquia, sitemap, velocidade e adaptação para celular ajudam buscadores a acessar e compreender o site.</p></article>
+        <article><CheckCircle2 size={22} /><h2>Credibilidade digital</h2><p>Informações consistentes, projetos reais, contato e uma apresentação profissional ajudam o cliente a confiar e decidir.</p></article>
+      </div>
+      <div className="ai-note"><Sparkles size={20} /><p>Uma estrutura clara também facilita que buscadores e assistentes de inteligência artificial compreendam quem é sua empresa, o que ela oferece e onde atua.</p></div>
+      <p className="education-stage__context">Para <strong>{business}</strong>{lead.cidade ? <> em <strong>{lead.cidade}</strong></> : null}, a prioridade é organizar informações que ajudem público e mecanismos de busca a compreenderem o negócio.</p>
+      <p className="responsible-note">Essas práticas criam uma base de visibilidade, mas não garantem posição específica em mecanismos de busca ou respostas de inteligência artificial.</p>
+      <div className="stage-actions"><button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar</button><button className="button button--primary" onClick={onContinue}>Ver projetos relacionados <ArrowRight size={18} /></button></div>
+    </section>
+  );
+}
+
+function PortfolioPreview({ niche, onBack, onContinue }: { niche: string; onBack: () => void; onContinue: () => void }) {
+  const [selected, setSelected] = useState<PortfolioProject | null>(null);
+  const projects = getPortfolioForNiche(niche, 3);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const modalCloseRef = useRef<HTMLButtonElement | null>(null);
+
+  function openProject(project: PortfolioProject, target: HTMLButtonElement) {
+    triggerRef.current = target;
+    setSelected(project);
+    track("portfolio_project_preview", { project_id: project.id });
+  }
+
+  useEffect(() => {
+    if (!selected) return;
+    modalCloseRef.current?.focus();
+    document.body.classList.add("has-dialog");
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setSelected(null); };
+    document.addEventListener("keydown", close);
+    return () => { document.removeEventListener("keydown", close); document.body.classList.remove("has-dialog"); triggerRef.current?.focus(); };
+  }, [selected]);
+
+  return (
+    <section className="portfolio-preview stage" aria-labelledby="portfolio-preview-title">
+      <p className="eyebrow">PROJETOS DO SEU CONTEXTO</p>
+      <h1 id="portfolio-preview-title">Projetos reais em áreas relacionadas.</h1>
+      <p>Separei até três trabalhos do nicho escolhido. Nenhum exemplo aleatório entrou nesta seleção.</p>
+      <div className="portfolio-preview__grid">
+        {projects.map((project) => (
+          <button className="portfolio-preview-card" key={project.id} onClick={(event) => openProject(project, event.currentTarget)}>
+            <div><img src={project.image} alt={`Página inicial do projeto ${project.name}`} loading="lazy" /></div>
+            <footer><span>{project.category}</span><h2>{project.name}</h2><p>{project.summary}</p>{project.solutionType && <strong>{project.solutionType}</strong>}</footer>
+          </button>
+        ))}
+      </div>
+      <div className="stage-actions"><button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar</button><button className="button button--primary" onClick={onContinue}>Finalizar meu diagnóstico <ArrowRight size={18} /></button></div>
+      {selected && (
+        <div className="project-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}>
+          <div className="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+            <button ref={modalCloseRef} className="icon-button" onClick={() => setSelected(null)} aria-label="Fechar projeto"><X size={20} /></button>
+            <img src={selected.image} alt={`Página inicial do projeto ${selected.name}`} />
+            <div><p className="section-label">{selected.solutionType}</p><h2 id="project-modal-title">{selected.name}</h2><p>{selected.summary}</p></div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PortfolioScreen({ onBack }: { onBack: () => void }) {
   const [category, setCategory] = useState("Todos");
-  const sortedProjects = getPortfolioForNiche(niche);
-  const visibleProjects = category === "Todos"
-    ? sortedProjects
-    : sortedProjects.filter((item) => item.category === category);
+  const visibleProjects = category === "Todos" ? portfolioProjects : portfolioProjects.filter((item) => item.category === category);
 
   return (
     <section className="portfolio-stage" aria-labelledby="portfolio-stage-title">
       <header className="portfolio-stage__heading">
         <div>
-          <p className="eyebrow">ANTES DE CONTINUARMOS</p>
+          <p className="eyebrow">PORTFÓLIO COMPLETO</p>
           <h1 id="portfolio-stage-title">
             <span>Projetos reais em</span>
             <span>contextos diferentes.</span>
           </h1>
-          <p>Separei primeiro os trabalhos mais próximos da área que você escolheu. Explore outros segmentos ou continue quando quiser.</p>
+          <p>Explore outros projetos reais depois de concluir seu diagnóstico.</p>
         </div>
         <div className="portfolio-stage__count"><strong>{portfolioProjects.length}</strong><span>projetos no ar</span></div>
       </header>
@@ -725,9 +789,8 @@ function PortfolioScreen({ niche, onBack, onContinue }: {
       </div>
 
       <footer className="portfolio-stage__actions">
-        <button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar à resposta</button>
+        <button className="button button--secondary" onClick={onBack}><ArrowLeft size={18} /> Voltar ao resultado</button>
         <p>Você pode abrir qualquer projeto em uma nova aba.</p>
-        <button className="button button--primary" onClick={onContinue}>Continuar respondendo <ArrowRight size={18} /></button>
       </footer>
     </section>
   );
@@ -758,7 +821,8 @@ function Processing({ onDone }: { onDone: () => void }) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timer = window.setTimeout(() => onDoneRef.current(), reduced ? 80 : 1250);
     if (!reduced && ref.current) {
-      gsap.fromTo(ref.current.querySelectorAll("i"), { scale: 0.72, autoAlpha: 0.2 }, { scale: 1, autoAlpha: 1, duration: 0.4, stagger: 0.2, ease: "power2.out" });
+      const nodes = ref.current.querySelectorAll("i");
+      if (nodes.length) gsap.fromTo(nodes, { scale: 0.72, autoAlpha: 0.2 }, { scale: 1, autoAlpha: 1, duration: 0.4, stagger: 0.2, ease: "power2.out" });
     }
     return () => window.clearTimeout(timer);
   }, []);
@@ -773,13 +837,13 @@ function Processing({ onDone }: { onDone: () => void }) {
   );
 }
 
-function ResultPanel({ lead, result, emailStatus, onBack, onRetryEmail, onSummary, summaryButtonRef }: {
+function ResultPanel({ lead, result, emailStatus, onRetryEmail, onSummary, onPortfolio, summaryButtonRef }: {
   lead: Lead;
   result: ReturnType<typeof getRecommendation>;
   emailStatus: "idle" | "sending" | "sent" | "error" | "unavailable";
-  onBack: () => void;
   onRetryEmail: () => void | Promise<void>;
   onSummary: () => void;
+  onPortfolio: () => void;
   summaryButtonRef: React.MutableRefObject<HTMLButtonElement | null>;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -788,7 +852,8 @@ function ResultPanel({ lead, result, emailStatus, onBack, onRetryEmail, onSummar
   useEffect(() => {
     sectionRef.current?.querySelector<HTMLElement>("h1")?.focus();
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !sectionRef.current) return;
-    gsap.fromTo(sectionRef.current.querySelectorAll("[data-result]"), { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.08, ease: "power2.out" });
+    const nodes = sectionRef.current.querySelectorAll("[data-result]");
+    if (nodes.length) gsap.fromTo(nodes, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.08, ease: "power2.out" });
   }, []);
 
   return (
@@ -799,6 +864,12 @@ function ResultPanel({ lead, result, emailStatus, onBack, onRetryEmail, onSummar
         <p>{copy.limit}</p>
         <button ref={(node) => { summaryButtonRef.current = node; }} className="summary-trigger" onClick={onSummary}><Eye size={17} /> Ver minhas respostas</button>
       </header>
+
+      <section className="result-indicators" data-result aria-label="Indicadores do diagnóstico">
+        <article><span>Presença digital</span><strong>{result.indicators.presence}</strong></article>
+        <article><span>Visibilidade</span><strong>{result.indicators.visibility}</strong></article>
+        <article><span>Conversão</span><strong>{result.indicators.conversion}</strong></article>
+      </section>
 
       <section className="result-reading" data-result aria-label="Leitura do cenário">
         <article><p className="section-label">O QUE ENTENDI</p><p>{copy.understood}</p></article>
@@ -818,6 +889,19 @@ function ResultPanel({ lead, result, emailStatus, onBack, onRetryEmail, onSummar
           <p className="section-label recommendation__include">O QUE PODERIA FAZER PARTE</p>
           <ul>{result.recommendation.structure.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
+      </section>
+
+      <section className="visibility-result" data-result>
+        <ScanSearch size={26} />
+        <div><p className="section-label">VISIBILIDADE NO GOOGLE</p><h2>Sua empresa precisa ser encontrada e compreendida</h2><p>{copy.visibility}</p></div>
+      </section>
+
+      <section className="offer-block" data-result>
+        <div><p className="section-label">UMA FORMA DE COMEÇAR</p><h2>Site Profissional Essencial <span>por R$ 497</span></h2><p>Uma estrutura profissional em uma página completa para apresentar sua empresa, explicar seus serviços, transmitir confiança e facilitar novos contatos.</p></div>
+        <ul>
+          <li>Planejamento da estrutura</li><li>Criação e organização dos textos</li><li>Layout personalizado</li><li>Desenvolvimento responsivo</li><li>Integração com WhatsApp</li><li>Configurações essenciais de SEO</li><li>Publicação</li><li>6 meses de hospedagem grátis</li>
+        </ul>
+        <p className="offer-block__note">O valor pode aumentar conforme as funcionalidades que precisarem ser desenvolvidas. O escopo e o valor final serão definidos em uma conversa sobre o projeto.</p>
       </section>
 
       {result.moduleKeys.length > 0 && (
@@ -857,7 +941,9 @@ function ResultPanel({ lead, result, emailStatus, onBack, onRetryEmail, onSummar
           </div>
         )}
         <div className="final-contact-actions">
-          <button type="button" className="button button--secondary" onClick={onBack}><ArrowLeft size={17} /> Revisar</button>
+          <a className="button button--primary" href={buildWhatsappUrl(lead, result)} target="_blank" rel="noreferrer" onClick={() => track("whatsapp_click", { source: "result_primary" })}><MessageCircle size={19} /> Quero conversar sobre meu site</a>
+          <button type="button" className="button button--portfolio" onClick={onPortfolio}>Ver portfólio completo</button>
+          <button ref={(node) => { summaryButtonRef.current = node; }} type="button" className="button button--text" onClick={onSummary}><Eye size={17} /> Revisar minhas respostas</button>
         </div>
       </section>
     </section>
@@ -929,6 +1015,7 @@ function answerFor(question: Question, lead: Lead) {
     return lead.negocio;
   }
   if (question.type === "text") return String(lead[question.field] || "");
+  if (question.type === "contact") return lead.whatsapp ? "Contato registrado" : "";
   const selected = String(lead[question.field] || "");
   const option = question.options?.find((item) => item.id === selected);
   if (!option) return "";
@@ -938,23 +1025,33 @@ function answerFor(question: Question, lead: Lead) {
 
 function shortQuestion(question: Question) {
   const labels: Record<string, string> = {
-    name: "Nome", business: "Negócio", niche: "Área de atuação", reach: "Alcance", situation: "Momento atual",
-    goal: "Objetivo", channel: "Canal principal", "sales-model": "Modelo de decisão", level: "Estrutura", budget: "Investimento", deadline: "Prazo"
+    name: "Nome", business: "Negócio", niche: "Área de atuação", reach: "Alcance", city: "Cidade/região", situation: "Momento atual", contact: "Contato",
+    goal: "Objetivo", "google-visibility": "Visibilidade no Google", channel: "Canal principal", "sales-model": "Modelo de decisão", "project-path": "Caminho do projeto", deadline: "Prazo"
   };
   return labels[question.id] || question.title;
 }
 
-function fireAnswerEvent(question: Question) {
+function fireAnswerEvent(question: Question, lead: Lead) {
   const eventByQuestion: Record<string, Parameters<typeof track>[0]> = {
     name: "answer_name",
     business: "answer_business",
     niche: "answer_niche",
+    reach: "answer_reach",
+    city: "answer_city",
     situation: "answer_current_situation",
     goal: "answer_goal",
-    channel: "answer_acquisition_channel"
+    "google-visibility": "answer_google_visibility",
+    channel: "answer_acquisition_channel",
+    "sales-model": "answer_sales_model",
+    "project-path": "answer_project_path",
+    deadline: "answer_deadline"
   };
   const event = eventByQuestion[question.id];
-  if (event) track(event);
+  if (!event) return;
+  const safeValue = question.type === "single" && !["business"].includes(question.id)
+    ? String(lead[question.field] || "")
+    : undefined;
+  track(event, safeValue ? { answer_id: safeValue } : {});
 }
 
 function Ambient() {

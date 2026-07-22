@@ -4,11 +4,12 @@ import { Lead } from "../state/lead-state";
 export function getResultCopy(lead: Lead, result: RecommendationResult) {
   return {
     title: `${lead.nome || "Você"}, este é um bom ponto de partida para ${businessName(lead)}.`,
-    limit: "Esta é uma leitura inicial. Antes de fechar o escopo, ainda precisamos olhar o seu público, o conteúdo disponível e o que já existe no projeto.",
+    limit: "A recomendação considera seu momento, seu objetivo, sua forma de atendimento e a maneira como sua empresa é encontrada hoje.",
     understood: `${situationSentence(lead)} ${objectiveSentence(lead)} ${channelSentence(lead)}`,
     challenge: challengeSentence(lead),
     opportunity: opportunitySentence(lead),
-    why: `${decisionSentence(lead)} ${levelSentence(lead)}`,
+    why: `${decisionSentence(lead)} ${pathSentence(lead)}`,
+    visibility: visibilitySentence(lead),
     notPriority: notPriorityFor(lead, result),
     proof: "A experiência com mais de 200 websites ajuda a reconhecer caminhos, mas não substitui uma conversa sobre o seu negócio. A recomendação final ainda depende do público, do conteúdo, dos materiais e da sua rotina de atendimento."
   };
@@ -102,19 +103,29 @@ function decisionSentence(lead: Lead) {
   return sentences[lead.modeloVenda] || "A forma de decisão do cliente ainda precisa ser confirmada.";
 }
 
-function levelSentence(lead: Lead) {
+function pathSentence(lead: Lead) {
   const sentences: Record<string, string> = {
-    essencial: "Por isso, faz sentido começar pelo essencial e deixar as evoluções para depois.",
-    personalizada: "A primeira etapa pode ser personalizada, mas ainda precisa manter prioridades claras.",
-    completa: "Uma estrutura mais completa pode fazer sentido, desde que cada integração resolva uma necessidade real do processo.",
-    orientacao: "O melhor agora é separar o indispensável do que pode esperar, antes de fechar qualquer escopo."
+    site_497: "Por isso, faz sentido começar pelo Site Profissional Essencial e deixar evoluções para depois.",
+    mais_paginas: "A recomendação considera uma estrutura maior, com escopo e orçamento personalizados.",
+    recursos_integracoes: "Recursos adicionais precisam ser confirmados antes de definir escopo e orçamento.",
+    orientacao: "O melhor agora é separar o indispensável do que pode esperar."
   };
-  return sentences[lead.nivel] || "O tamanho da primeira etapa deve ser confirmado antes de fechar o escopo.";
+  return sentences[lead.caminhoProjeto] || "O tamanho da primeira etapa deve ser confirmado antes de fechar o escopo.";
+}
+
+function visibilitySentence(lead: Lead) {
+  const business = businessName(lead);
+  if (lead.visibilidadeGoogle === "encontra_site") {
+    return `Sua empresa já possui uma base de presença. A oportunidade é melhorar clareza, conteúdo e estrutura para que o site represente melhor ${business} e facilite a decisão.`;
+  }
+  const place = lead.cidade ? ` em ${lead.cidade}` : "";
+  const subject = business.startsWith("o ") ? business.slice(2) : business;
+  return `Existe uma oportunidade de organizar serviços, região de atendimento e formas de contato para fortalecer a presença ${subject === "seu trabalho" || subject === "seu projeto" ? `do ${subject}` : `de ${subject}`}${place} nas pesquisas.`;
 }
 
 function notPriorityFor(lead: Lead, result: RecommendationResult) {
   if (result.recommendation.id === "catalogo") return "Loja virtual, checkout e pagamento on-line não parecem necessários agora. Primeiro vale organizar a vitrine e tornar o pedido mais simples.";
-  if (["essencial", "orientacao"].includes(lead.nivel) || result.recommendation.id === "mvp") return "Integrações e automações avançadas podem esperar. Primeiro precisamos fazer o caminho principal funcionar bem.";
+  if (["site_497", "orientacao"].includes(lead.caminhoProjeto) || result.recommendation.id === "mvp") return "Integrações e automações avançadas podem esperar. Primeiro precisamos fazer o caminho principal funcionar bem.";
   if (lead.canal !== "trafego_pago") return "Uma estrutura complexa de rastreamento não precisa ser o primeiro passo. Podemos medir as ações essenciais e ampliar depois, se os dados pedirem.";
   return "Ainda não é hora de excluir partes importantes do escopo. A conversa precisa confirmar onde está o problema antes dessa decisão.";
 }

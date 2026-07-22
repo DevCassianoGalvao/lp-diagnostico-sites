@@ -9,6 +9,7 @@ export type Lead = {
   cidade: string;
   situacao: string;
   situacaoOutro: string;
+  visibilidadeGoogle: string;
   objetivo: string;
   objetivoOutro: string;
   canal: string;
@@ -16,6 +17,7 @@ export type Lead = {
   modeloVenda: string;
   nivel: string;
   investimento: string;
+  caminhoProjeto: string;
   prazo: string;
   whatsapp: string;
   email: string;
@@ -34,6 +36,7 @@ export const initialLead: Lead = {
   cidade: "",
   situacao: "",
   situacaoOutro: "",
+  visibilidadeGoogle: "",
   objetivo: "",
   objetivoOutro: "",
   canal: "",
@@ -41,6 +44,7 @@ export const initialLead: Lead = {
   modeloVenda: "",
   nivel: "",
   investimento: "",
+  caminhoProjeto: "",
   prazo: "",
   whatsapp: "",
   email: "",

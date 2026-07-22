@@ -1,24 +1,37 @@
-# ANALYTICS_EVENTS.md
+# Eventos de analytics
 
-Eventos preparados em `src/analytics/events.ts`.
+Eventos tipados em `src/analytics/events.ts`. Nenhum evento envia nome, telefone, e-mail, negócio, cidade ou texto livre.
 
-| Evento | Quando dispara | Dados permitidos |
-| --- | --- | --- |
-| `page_view` | Carregamento da pagina | Nenhum dado pessoal |
-| `intro_view` | Visitante avanca da apresentacao pessoal | Nenhum dado pessoal |
-| `start_diagnosis` | Clique no CTA inicial | Nenhum dado pessoal |
-| `answer_name` | Nome avancado | Sem nome |
-| `answer_business` | Negocio avancado | Sem nome do negocio |
-| `answer_niche` | Nicho avancado | ID normalizado, se necessario |
-| `answer_current_situation` | Situacao avancada | ID normalizado |
-| `answer_goal` | Objetivo avancado | ID normalizado |
-| `answer_acquisition_channel` | Canal avancado | ID normalizado |
-| `recommendation_view` | Resultado exibido | ID da recomendacao |
-| `contact_form_view` | Captura aparece | Etapa |
-| `lead_submit` | Contato validado | ID da recomendacao |
-| `qualified_lead` | Lead qualificado | ID da recomendacao e modulos |
-| `whatsapp_click` | Clique no WhatsApp | Contexto do CTA |
-| `restart_diagnosis` | Usuario reinicia | Nenhum dado pessoal |
-| `edit_answer` | Usuario volta/revisa | Campo alterado |
+| Evento | Quando dispara |
+| --- | --- |
+| `page_view` | Aplicação carregada |
+| `start_diagnosis` | Clique para iniciar |
+| `intro_view` | Entrada nas perguntas |
+| `answer_name` | Nome concluído, sem enviar o nome |
+| `answer_business` | Negócio concluído, sem enviar seu texto |
+| `answer_niche` | Nicho concluído, com ID normalizado |
+| `answer_reach` | Alcance concluído |
+| `answer_city` | Cidade concluída, sem enviar seu texto |
+| `answer_current_situation` | Momento atual concluído |
+| `contact_form_view` | Captura progressiva exibida |
+| `contact_captured` | Contato validado e salvo na sessão local |
+| `answer_goal` | Objetivo concluído |
+| `answer_google_visibility` | Situação no Google concluída |
+| `answer_acquisition_channel` | Canal concluído |
+| `answer_sales_model` | Modelo de decisão concluído |
+| `answer_project_path` | Caminho do projeto concluído |
+| `answer_deadline` | Prazo concluído |
+| `google_education_view` | Tela educativa exibida |
+| `portfolio_preview_view` | Prova relacionada exibida |
+| `portfolio_project_preview` | Case aberto no modal interno |
+| `diagnosis_complete` | Todas as respostas concluídas |
+| `recommendation_view` | Resultado exibido |
+| `lead_submit` | Diagnóstico final enviado |
+| `whatsapp_click` | CTA do WhatsApp clicado, com `source` |
+| `portfolio_full_view` | Portfólio completo aberto após resultado |
+| `restart_diagnosis` | Diagnóstico reiniciado |
+| `edit_answer` | Resposta aberta para edição |
 
-Regra: nao enviar nome, telefone, e-mail, negocio ou textos livres para analytics.
+`qualified_lead` não é disparado no navegador. Qualificação comercial deve vir de CRM, Conversions API ou integração posterior.
+
+UTMs e `fbclid` ficam na sessão e seguem apenas no payload privado do lead.

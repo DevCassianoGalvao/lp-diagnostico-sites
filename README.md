@@ -1,8 +1,8 @@
-# Cassiano Galvao | Landing Conversacional
+# Cassiano Galvão | Diagnóstico de Sites
 
-Landing page conversacional e adaptativa para qualificar leads de projetos de sites, landing pages e estruturas digitais.
+Diagnóstico conversacional para captar e qualificar interessados em sites profissionais.
 
-O redesign organiza a experiencia em apresentacao, orientacao, perguntas, processamento e resultado. A interface usa Space Grotesk como fonte principal e IBM Plex Mono apenas em pequenos indicadores.
+O fluxo usa captura progressiva, leitura sobre Google, prova de portfólio relacionada ao nicho e resultado com oferta do Site Profissional Essencial por R$ 497. Funcionalidades adicionais podem alterar o orçamento após a conversa de definição do projeto.
 
 ## Como instalar
 
@@ -27,6 +27,7 @@ npm.cmd run build
 - Cores e tokens: `src/styles/global.css`
 - WhatsApp: `src/services/whatsapp.ts`
 - Perguntas: `src/content/questions.ts`
+- Taxonomia e projetos: `src/content/portfolio.ts`
 - Recomendacoes: `src/content/recommendations.ts`
 - Regras: `src/rules/recommendation-engine.ts`
 - Eventos: `src/analytics/events.ts`
@@ -49,18 +50,19 @@ Nao foram criados logo, depoimentos, metricas ou projetos ficticios.
 
 ## Como testar jornadas
 
-Use o formulario interativo e combine:
+Use o formulário interativo e valide:
 
-- Saude + Instagram + agendamento.
-- Juridico + autoridade + pesquisa.
-- Servico local + orcamento + Google.
-- Consultoria + trafego pago + reuniao.
-- Comercio + catalogo + WhatsApp.
-- Nicho Outro + objetivo Outro.
-- Site desatualizado + redesign.
-- Sessao salva: responda algumas perguntas, recarregue e continue.
+- Serviço local + cidade + sem site + concorrentes no Google + caminho de R$ 497.
+- Jurídico + autoridade + mais páginas.
+- Saúde + agendamento + recursos adicionais.
+- Outro: deve mostrar somente projetos marcados como `outro`.
+- Tecnologia: não deve aparecer sem case associado.
+- Abandono após captura: contato e respostas permanecem apenas na sessão local; o Brevo dispara uma única notificação ao concluir o diagnóstico.
+- Sessão antiga: chave v1 ignorada; sessão v2 recuperada sem etapa incompatível.
 
-Verificacao importante: nenhuma jornada deve recomendar e-commerce, carrinho, checkout ou pagamento online.
+Os nichos públicos são derivados dos projetos reais em `portfolioProjects`. A prova rápida filtra correspondências exatas e mostra no máximo três cases, sem links externos.
+
+Regra pública: usar “site”, “site profissional” ou “site profissional em uma página”. Não usar “landing page” na interface do empresário. Nenhuma jornada deve recomendar e-commerce, carrinho, checkout ou pagamento on-line.
 
 ## Publicacao no cPanel
 

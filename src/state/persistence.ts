@@ -1,11 +1,12 @@
 import { Lead, initialLead } from "./lead-state";
 
-const STORAGE_KEY = "cassiano-diagnostico-v1";
+const STORAGE_KEY = "cassiano-diagnostico-v2";
 
 export type SavedSession = {
   lead: Lead;
   step: number;
   completed: boolean;
+  screen?: string;
   savedAt: string;
   notifications?: {
     startedAt?: string;

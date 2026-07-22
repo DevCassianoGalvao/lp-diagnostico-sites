@@ -7,12 +7,14 @@ export const chapters: Record<string, string> = {
   business: "AGORA, O SEU PROJETO",
   niche: "O CONTEXTO DO NEGÓCIO",
   reach: "QUEM VOCÊ ATENDE",
+  city: "ONDE VOCÊ ATENDE",
   situation: "O MOMENTO ATUAL",
+  contact: "SALVAR SEU DIAGNÓSTICO",
   goal: "O QUE PRECISA MELHORAR",
+  "google-visibility": "SUA PRESENÇA NAS PESQUISAS",
   channel: "COMO AS PESSOAS CHEGAM",
   "sales-model": "O QUE ACONTECE ANTES DO CONTATO",
-  level: "O TAMANHO DO PRIMEIRO PASSO",
-  budget: "PRIORIDADES E LIMITES",
+  "project-path": "O CAMINHO DO PROJETO",
   deadline: "ÚLTIMO CONTEXTO"
 };
 
@@ -81,10 +83,10 @@ function feedbackTitle(questionId: string) {
     business: "Entendi como tratar o projeto.",
     niche: "Esse contexto importa.",
     reach: "Agora sei quem a estrutura precisa atender.",
+    "google-visibility": "Entendi como sua empresa aparece hoje.",
     goal: "A prioridade ficou mais clara.",
     "sales-model": "Entendi quanto contexto a decisão exige.",
-    level: "O primeiro passo ganhou um limite.",
-    budget: "Vou organizar a recomendação por etapas.",
+    "project-path": "O primeiro passo ganhou uma direção.",
     deadline: "Contexto suficiente para uma leitura inicial."
   };
   return titles[questionId] || "Entendi."
