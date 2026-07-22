@@ -39,6 +39,23 @@ type Screen = "welcome" | "orientation" | "questions" | "education" | "portfolio
 
 const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
+function useEnterAdvance(onAdvance: () => void | Promise<void>, enabled = true) {
+  useEffect(() => {
+    if (!enabled) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || event.isComposing || event.repeat) return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (target?.closest("textarea, button, a, [role='button'], [role='radio'], input[type='checkbox']")) return;
+      event.preventDefault();
+      void onAdvance();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [enabled, onAdvance]);
+}
+
 declare global {
   interface Window {
     cassianoRoot?: Root;
@@ -477,6 +494,8 @@ function Welcome({ recovered, onStart, onResume }: {
 }
 
 function Orientation({ onBack, onStart }: { onBack: () => void; onStart: () => void }) {
+  useEnterAdvance(onStart);
+
   return (
     <section className="orientation stage" aria-labelledby="orientation-title">
       <p className="eyebrow">ANTES DE COMEÇARMOS</p>
@@ -522,6 +541,7 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
   const selectedOption = question.options?.find((option) => option.id === selected);
   const feedback = selectedOption ? getFeedback(question, selectedOption, lead) : null;
   const titleRef = useRef<HTMLHeadingElement>(null);
+  useEnterAdvance(onNext, canContinue);
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -559,7 +579,6 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
               value={String(lead[question.field] || "")}
               placeholder={question.placeholder}
               onChange={(event) => onText(question.field, editableText(event.target.value, 120) as never)}
-              onKeyDown={(event) => { if (event.key === "Enter" && canContinue) onNext(); }}
             />
           </label>
         )}
@@ -634,9 +653,14 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
                 aria-checked={selected === option.id}
                 onClick={() => onOption(option)}
                 onKeyDown={(event) => {
-                  if (event.key === " " || event.key === "Enter") {
+                  if (event.key === " ") {
                     event.preventDefault();
                     onOption(option);
+                  }
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    if (selected === option.id && canContinue) void onNext();
+                    else onOption(option);
                   }
                 }}
               >
@@ -661,6 +685,12 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
               value={String(lead[selectedOption.requiresText] || "")}
               placeholder="Uma frase já é suficiente."
               onChange={(event) => onText(selectedOption.requiresText!, editableText(event.target.value) as never)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey && canContinue) {
+                  event.preventDefault();
+                  void onNext();
+                }
+              }}
             />
           </label>
         )}
@@ -685,6 +715,8 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, on
 
 function VisibilityEducation({ lead, onBack, onContinue }: { lead: Lead; onBack: () => void; onContinue: () => void }) {
   const business = lead.tipoNegocio === "indefinido" ? "seu projeto" : lead.negocio || "seu negócio";
+  useEnterAdvance(onContinue);
+
   return (
     <section className="education-stage stage" aria-labelledby="education-title">
       <p className="eyebrow">ANTES DA SUA RECOMENDAÇÃO</p>
@@ -704,6 +736,8 @@ function VisibilityEducation({ lead, onBack, onContinue }: { lead: Lead; onBack:
 }
 
 function PortfolioPreview({ niche, onBack, onContinue }: { niche: string; onBack: () => void; onContinue: () => void }) {
+  useEnterAdvance(onContinue);
+
   const [selected, setSelected] = useState<PortfolioProject | null>(null);
   const projects = getPortfolioForNiche(niche, 3);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
