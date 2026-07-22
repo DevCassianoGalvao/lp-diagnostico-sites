@@ -297,6 +297,7 @@ function App() {
         return;
       }
       setNotifications((value) => ({ ...value, completedAt: new Date().toISOString() }));
+      track("lead_notification_sent", { recommendation: result.recommendation.id });
       setDiagnosisEmailStatus("sent");
       setAnnouncement("Seus dados e seu diagnóstico foram enviados com sucesso.");
     } catch {

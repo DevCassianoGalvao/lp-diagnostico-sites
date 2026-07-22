@@ -27,6 +27,7 @@ Eventos tipados em `src/analytics/events.ts`. Nenhum evento envia nome, telefone
 | `diagnosis_complete` | Todas as respostas concluídas |
 | `recommendation_view` | Resultado exibido |
 | `lead_submit` | Diagnóstico final enviado |
+| `lead_notification_sent` | Brevo confirmou o recebimento do diagnóstico completo |
 | `offer_gift_reveal` | Presente de hospedagem revelado na oferta |
 | `whatsapp_click` | CTA do WhatsApp clicado, com `source` |
 | `portfolio_full_view` | Portfólio completo aberto após resultado |
@@ -36,3 +37,18 @@ Eventos tipados em `src/analytics/events.ts`. Nenhum evento envia nome, telefone
 `qualified_lead` não é disparado no navegador. Qualificação comercial deve vir de CRM, Conversions API ou integração posterior.
 
 UTMs e `fbclid` ficam na sessão e seguem apenas no payload privado do lead.
+
+## Meta Pixel
+
+A configuração automática está desativada para evitar eventos genéricos de clique. O Pixel recebe somente os sinais abaixo:
+
+| Evento interno | Evento Meta | Tipo |
+| --- | --- | --- |
+| `start_diagnosis` | `DiagnosisStarted` | Personalizado |
+| `contact_captured` | `ContactCaptured` | Personalizado |
+| `diagnosis_complete` | `DiagnosisCompleted` | Personalizado |
+| `offer_gift_reveal` | `GiftRevealed` | Personalizado |
+| `whatsapp_click` | `Contact` | Padrão |
+| `lead_notification_sent` | `Lead` | Padrão |
+
+`Lead` só dispara depois que o endpoint confirma a entrega ao Brevo. Nenhum dado pessoal ou texto livre é enviado ao Pixel.
