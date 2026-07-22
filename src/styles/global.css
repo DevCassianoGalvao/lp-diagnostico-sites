@@ -388,7 +388,7 @@ img { display: block; max-width: 100%; }
 .field small, .contact > small { color: var(--danger); font-weight: 500; }
 .lead-capture { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
 .lead-capture .field { margin-top: 0; }
-.lead-capture__name, .lead-capture .consent { grid-column: 1 / -1; }
+.lead-capture__name, .lead-capture__instagram, .lead-capture .consent { grid-column: 1 / -1; }
 .lead-capture .consent { margin-top: 4px; }
 
 .microfeedback { display: grid; grid-template-columns: 22px 1fr; gap: 12px; margin-top: 20px; padding: 16px 0 0; border-top: 1px solid rgba(0, 239, 158, 0.22); color: var(--green); }
@@ -611,7 +611,7 @@ img { display: block; max-width: 100%; }
   .contact-success { grid-template-columns: 24px 1fr; }
   .contact-success .button { grid-column: 1 / -1; width: 100%; }
   .lead-capture { grid-template-columns: 1fr; }
-  .lead-capture__name, .lead-capture .consent { grid-column: 1; }
+  .lead-capture__name, .lead-capture__instagram, .lead-capture .consent { grid-column: 1; }
   .final-contact-actions { align-items: stretch; flex-direction: column-reverse; }
   .final-contact-actions .button { width: 100%; }
   .email-status--error { align-items: stretch; flex-direction: column; }

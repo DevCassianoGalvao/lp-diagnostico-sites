@@ -19,6 +19,7 @@ export type Lead = {
   prazo: string;
   whatsapp: string;
   email: string;
+  instagram: string;
   consentimento: boolean;
 };
 
@@ -43,6 +44,7 @@ export const initialLead: Lead = {
   prazo: "",
   whatsapp: "",
   email: "",
+  instagram: "",
   consentimento: false
 };
 

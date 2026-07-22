@@ -145,6 +145,7 @@ function normalize_lead(array $payload): array
         'name' => clean_text($contactPayload['name'] ?? '', 80),
         'whatsapp' => clean_text($contactPayload['whatsapp'] ?? '', 24),
         'email' => strtolower(clean_text($contactPayload['email'] ?? '', 120)),
+        'instagram' => normalize_instagram_handle($contactPayload['instagram'] ?? ''),
         'consent' => ($contactPayload['consent'] ?? false) === true,
     ];
 
@@ -223,12 +224,20 @@ function build_lead_email(array $lead): array
     }
 
     $whatsappUrl = whatsapp_contact_url($lead['contact']['whatsapp'], $lead['contact']['name']);
-    $whatsappButton = $whatsappUrl !== ''
-        ? '<div style="margin:0 0 24px;padding:0 0 22px;border-bottom:1px solid #e6e6e6">'
-            . '<p style="margin:0 0 10px;font-size:14px;color:#333">Conversa pronta com uma saudação personalizada para este lead.</p>'
-            . '<a href="' . html($whatsappUrl) . '" style="display:inline-block;padding:12px 16px;background:#00a884;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:4px">Abrir conversa com ' . html($lead['contact']['name']) . '</a>'
-            . '</div>'
-        : '';
+    $instagramUrl = instagram_profile_url($lead['contact']['instagram']);
+    $contactActions = '';
+    if ($whatsappUrl !== '' || $instagramUrl !== '') {
+        $contactActions = '<div style="margin:0 0 24px;padding:0 0 22px;border-bottom:1px solid #e6e6e6">'
+            . '<p style="margin:0 0 10px;font-size:14px;color:#333">Atalhos para entrar em contato e conhecer o perfil deste lead.</p>';
+        if ($whatsappUrl !== '') {
+            $contactActions .= '<a href="' . html($whatsappUrl) . '" style="display:inline-block;margin:0 8px 8px 0;padding:12px 16px;background:#00a884;color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:4px">Abrir WhatsApp</a>';
+        }
+        if ($instagramUrl !== '') {
+            $contactActions .= '<a href="' . html($instagramUrl) . '" style="display:inline-block;margin:0 0 8px;padding:12px 16px;background:#c13584;background-image:linear-gradient(90deg,#833ab4,#c13584,#e1306c);color:#fff;text-decoration:none;font-size:14px;font-weight:700;border-radius:4px">'
+                . '<img src="https://cassianogalvao.com.br/lp/assets/icons/instagram.svg" width="17" height="17" alt="" style="display:inline-block;margin:0 7px -4px 0;border:0">Abrir Instagram</a>';
+        }
+        $contactActions .= '</div>';
+    }
 
     $htmlContent = '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="margin:0;background:#f4f4f5;font-family:Arial,sans-serif;color:#151515">'
         . '<div style="max-width:720px;margin:0 auto;padding:28px 16px">'
@@ -236,9 +245,10 @@ function build_lead_email(array $lead): array
         . '<p style="margin:0 0 8px;color:#a954ff;font-size:12px;font-weight:700;text-transform:uppercase">'
         . ($complete ? 'Diagnóstico concluído' : 'Novo contato capturado') . '</p>'
         . '<h1 style="margin:0;font-size:26px">' . html($lead['contact']['name']) . '</h1></div>'
-        . '<div style="background:#fff;padding:24px">' . $whatsappButton . '<h2 style="margin:0 0 14px;font-size:20px">Contato</h2>'
+        . '<div style="background:#fff;padding:24px">' . $contactActions . '<h2 style="margin:0 0 14px;font-size:20px">Contato</h2>'
         . email_block('WhatsApp', $lead['contact']['whatsapp'])
         . email_block('E-mail', $lead['contact']['email'])
+        . ($lead['contact']['instagram'] !== '' ? email_block('Instagram', '@' . $lead['contact']['instagram']) : '')
         . email_block('ID do lead', $lead['leadId'])
         . ($answerRows !== '' ? '<h2 style="margin:28px 0 12px;font-size:20px">Respostas</h2><table style="width:100%;border-collapse:collapse">' . $answerRows . '</table>' : '')
         . $diagnosisHtml . '</div></div></body></html>';
@@ -256,6 +266,26 @@ function whatsapp_contact_url(string $phone, string $name): string
 
     $message = 'Olá, ' . $name . '! Aqui é o Cassiano Galvão. Recebi seu diagnóstico pelo meu site e gostaria de entender melhor o seu projeto. Podemos conversar?';
     return 'https://wa.me/' . $digits . '?text=' . rawurlencode($message);
+}
+
+function normalize_instagram_handle($value): string
+{
+    $raw = trim((string) $value);
+    if ($raw === '') return '';
+
+    $candidate = preg_replace('#^https?://#i', '', $raw);
+    $candidate = preg_replace('#^(www\.)?instagram\.com/#i', '', (string) $candidate);
+    $candidate = ltrim((string) $candidate, '@');
+    $candidate = explode('/', $candidate)[0];
+    $candidate = explode('?', $candidate)[0];
+    $candidate = explode('#', $candidate)[0];
+
+    return preg_match('/^[a-zA-Z0-9._]{1,30}$/', $candidate) ? $candidate : '';
+}
+
+function instagram_profile_url(string $handle): string
+{
+    return $handle !== '' ? 'https://www.instagram.com/' . rawurlencode($handle) . '/' : '';
 }
 
 function client_ip(): string

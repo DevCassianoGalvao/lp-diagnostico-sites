@@ -68,6 +68,7 @@ function buildLeadNotification(
       name: lead.nome,
       whatsapp: lead.whatsapp,
       email: lead.email,
+      instagram: lead.instagram,
       consent: lead.consentimento
     }
   };
@@ -599,6 +600,16 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, sa
                 onChange={(event) => onText("email", editableText(event.target.value, 80))}
               />
               {lead.email && !isValidEmail(cleanText(lead.email, 80)) && <small>Confira se o e-mail está completo.</small>}
+            </label>
+            <label className="field lead-capture__instagram">
+              <span>Instagram <i>opcional</i></span>
+              <input
+                value={lead.instagram}
+                inputMode="url"
+                autoComplete="url"
+                placeholder="@empresa ou instagram.com/empresa"
+                onChange={(event) => onText("instagram", editableText(event.target.value, 120))}
+              />
             </label>
             <label className="consent">
               <input type="checkbox" checked={lead.consentimento} onChange={(event) => onText("consentimento", event.target.checked)} />

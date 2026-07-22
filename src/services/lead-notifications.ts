@@ -5,6 +5,7 @@ export type LeadNotificationPayload = {
     name: string;
     whatsapp: string;
     email: string;
+    instagram: string;
     consent: boolean;
   };
   answers?: Array<{ question: string; answer: string }>;
