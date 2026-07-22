@@ -30,7 +30,7 @@ import { track } from "./analytics/events";
 import { DIRECT_WHATSAPP_URL } from "./services/whatsapp";
 import { LeadNotificationPayload, sendLeadNotification } from "./services/lead-notifications";
 import { businessName, cleanText, editableText, firstName } from "./utils/sanitize";
-import { isValidEmail, isValidWhatsapp } from "./utils/validators";
+import { formatWhatsapp, isValidEmail, isValidWhatsapp } from "./utils/validators";
 import "./styles/global.css";
 
 type Screen = "welcome" | "orientation" | "questions" | "portfolio" | "processing" | "result";
@@ -579,11 +579,12 @@ function QuestionScreen({ question, lead, step, total, progress, canContinue, sa
               <span>WhatsApp</span>
               <input
                 value={lead.whatsapp}
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="(22) 99999-9999"
-                aria-invalid={Boolean(lead.whatsapp && !isValidWhatsapp(lead.whatsapp))}
-                onChange={(event) => onText("whatsapp", editableText(event.target.value, 20))}
+                 inputMode="tel"
+                 autoComplete="tel"
+                 maxLength={15}
+                 placeholder="(22) 99999-9999"
+                 aria-invalid={Boolean(lead.whatsapp && !isValidWhatsapp(lead.whatsapp))}
+                 onChange={(event) => onText("whatsapp", formatWhatsapp(event.target.value))}
               />
               {lead.whatsapp && !isValidWhatsapp(lead.whatsapp) && <small>Inclua o DDD e confira o número.</small>}
             </label>
